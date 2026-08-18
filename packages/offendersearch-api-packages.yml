@@ -1,0 +1,62 @@
+generated: '2026-08-18'
+method: searched
+source: >-
+  Registry lookups on 2026-08-18 plus the provider's own documentation set
+  (https://offendersearch.app/docs.md, /docs/quickstart.md, /llms.txt, and the site footer).
+description: >-
+  Offendersearch publishes NO client libraries. There is no SDK page, no GitHub organization
+  link anywhere on the site or in the docs, and no package under any obvious name in npm or
+  PyPI. Integration is documented entirely as raw HTTP: every code sample in the quickstart,
+  errors, async, batch and reports pages is cURL, fetch() or requests — the provider explicitly
+  positions the API as needing no client library ("no custom integration code"). This is an
+  honest zero, recorded so the absence is legible rather than looking unchecked.
+package_count: 0
+official_sdk_count: 0
+packages: []
+searched_registries:
+  - registry: npm
+    queries:
+      - name: offendersearch
+        url: https://registry.npmjs.org/offendersearch
+        status: 404
+      - name: '@offendersearch/sdk'
+        url: https://registry.npmjs.org/@offendersearch/sdk
+        status: 404
+      - name: offendersearch-api
+        url: https://registry.npmjs.org/offendersearch-api
+        status: 404
+  - registry: pypi
+    queries:
+      - name: offendersearch
+        url: https://pypi.org/pypi/offendersearch/json
+        status: 404
+      - name: offendersearch-api
+        url: https://pypi.org/pypi/offendersearch-api/json
+        status: 404
+  - registry: maven-central
+    checked: false
+    note: Not checked — no JVM language appears anywhere in the documentation.
+  - registry: nuget
+    checked: false
+    note: Not checked — no .NET language appears anywhere in the documentation.
+  - registry: rubygems
+    checked: false
+    note: Not checked — no Ruby appears anywhere in the documentation.
+  - registry: crates.io
+    checked: false
+    note: Not checked — no Rust appears anywhere in the documentation.
+  - registry: pkg.go.dev
+    checked: false
+    note: Not checked — no Go appears anywhere in the documentation.
+source_code:
+  github_organization: null
+  note: >-
+    No GitHubOrganization or SourceCode link is published on offendersearch.app or in any
+    documentation page, so there is nothing to derive package candidates from.
+documented_languages:
+  - language: shell
+    form: cURL examples in every reference page
+  - language: javascript
+    form: fetch() examples (Node) in every reference page
+  - language: python
+    form: requests examples in every reference page

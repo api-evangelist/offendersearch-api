@@ -1,66 +1,568 @@
+aid: offendersearch-api
 name: Offendersearch API
-description: >-
-  REST API unifying US sex-offender registry data across all 50 states, DC, and US territories behind a single endpoint,
-  returning scored, de-duplicated, source-tagged records with freshness tiers and consolidated verification-report PDFs.
+description: 'Offendersearch, Inc. operates a REST API that unifies US sex-offender registry data — all
+  50 states, the District of Columbia, the US territories and NSOPW, 58 registries in all — behind a single
+  authenticated endpoint. One call searches every jurisdiction and returns scored, de-duplicated records
+  in one normalized 76-field schema, each carrying per-source provenance, a deep link back to the originating
+  registry, and its own lastCheckedAt timestamp. Its defining contract is completeness labelling: an incomplete
+  search is reported as partial with per-source status and a closed incompleteReason enum rather than
+  returned as a silently empty result, so a zero from a registry that did not finish reads as UNKNOWN
+  rather than NO MATCH. The API offers synchronous, asynchronous (with signed webhooks and Idempotency-Key
+  retries) and 1,000-row batch/CSV modes, per-request freshness tiers, consolidated timestamped verification-report
+  PDFs with a citation on every record, and a drop-in offenders.io compatibility endpoint. It publishes
+  an OpenAPI 3.1 contract in JSON and YAML, an RFC 9727 api-catalog, an llms.txt, a markdown twin of every
+  documentation page, and a documented (private-beta) MCP server. Pricing is purely metered at $0.15 per
+  call, $0.11 above 2,000 a month. Offendersearch is expressly not a consumer reporting agency and its
+  results are not a consumer report.'
+image: https://offendersearch.app/opengraph-image.png
 url: https://offendersearch-api.apievangelist.com/apis.yml
 created: '2026-08-18'
 modified: '2026-08-18'
 specificationVersion: '0.21'
 tags:
-  - background-checks
-  - identity-verification
-  - public-records
-  - criminal-records
-  - compliance
-  - trust-and-safety
-  - hr-tech
-  - recruiting
-  - proptech
-  - tenant-screening
-  - healthcare-screening
-  - data-api
-  - mcp-server
-  - agent-native
+- background-checks
+- identity-verification
+- public-records
+- criminal-records
+- compliance
+- trust-and-safety
+- hr-tech
+- recruiting
+- proptech
+- tenant-screening
+- healthcare-screening
+- data-api
+- mcp-server
+- agent-native
 apis:
-  - name: Offendersearch API
-    description: >-
-      Nationwide sex-offender registry search API offering synchronous, asynchronous, and batch lookups, normalized
-      scored records, per-source provenance, freshness tiers, and consolidated verification-report PDFs.
-    humanURL: https://offendersearch.app/docs
-    baseURL: https://api.offendersearch.app
-    tags:
-      - background-checks
-      - identity-verification
-      - public-records
-      - criminal-records
-      - compliance
-      - trust-and-safety
-      - hr-tech
-      - recruiting
-      - proptech
-      - tenant-screening
-      - healthcare-screening
-      - data-api
-      - mcp-server
-      - agent-native
-    properties:
-      - type: OpenAPI
-        url: https://offendersearch.app/openapi.json
-      - type: OpenAPI
-        url: https://offendersearch.app/openapi.yaml
-      - type: Documentation
-        url: https://offendersearch.app/docs
-      - type: Documentation
-        url: https://offendersearch.app/docs.md
-      - type: Documentation
-        url: https://offendersearch.app/mcp-server
-      - type: Documentation
-        url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-account-api
+  name: Offendersearch API Account API
+  description: The Account API from Offendersearch API — 1 operation(s) for account.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Account
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-account-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-admin-api
+  name: Offendersearch API Admin API
+  description: The Admin API from Offendersearch API — 11 operation(s) for admin.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Admin
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-admin-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-auth-api
+  name: Offendersearch API Auth API
+  description: The Auth API from Offendersearch API — 2 operation(s) for auth.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Auth
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-auth-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-batch-api
+  name: Offendersearch API Batch API
+  description: The Batch API from Offendersearch API — 1 operation(s) for batch.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Batch
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-batch-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-billing-api
+  name: Offendersearch API Billing API
+  description: The Billing API from Offendersearch API — 1 operation(s) for billing.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Billing
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-billing-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-compat-api
+  name: Offendersearch API Compat API
+  description: The Compat API from Offendersearch API — 1 operation(s) for compat.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Compat
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-compat-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-keys-api
+  name: Offendersearch API Keys API
+  description: The Keys API from Offendersearch API — 3 operation(s) for keys.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Keys
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-keys-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-proof-docs-api
+  name: Offendersearch API Proof Docs API
+  description: The Proof Docs API from Offendersearch API — 1 operation(s) for proof docs.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Proof Docs
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-proof-docs-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-records-api
+  name: Offendersearch API Records API
+  description: The Records API from Offendersearch API — 1 operation(s) for records.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Records
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-records-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-report-api
+  name: Offendersearch API Report API
+  description: The Report API from Offendersearch API — 1 operation(s) for report.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Report
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-report-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-search-api
+  name: Offendersearch API Search API
+  description: The Search API from Offendersearch API — 1 operation(s) for search.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Search
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-search-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-searches-api
+  name: Offendersearch API Searches API
+  description: The Searches API from Offendersearch API — 3 operation(s) for searches.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Searches
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-searches-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-sources-api
+  name: Offendersearch API Sources API
+  description: The Sources API from Offendersearch API — 1 operation(s) for sources.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Sources
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-sources-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-support-api
+  name: Offendersearch API Support API
+  description: The Support API from Offendersearch API — 1 operation(s) for support.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Support
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-support-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-team-api
+  name: Offendersearch API Team API
+  description: The Team API from Offendersearch API — 2 operation(s) for team.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Team
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-team-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
+- aid: offendersearch-api:offendersearch-api-usage-api
+  name: Offendersearch API Usage API
+  description: The Usage API from Offendersearch API — 1 operation(s) for usage.
+  humanURL: https://offendersearch.app/docs
+  baseURL: https://api.offendersearch.app
+  tags:
+  - Usage
+  properties:
+  - type: OpenAPI
+    url: openapi/offendersearch-api-usage-api-openapi.yml
+  - type: Documentation
+    url: https://offendersearch.app/docs
+  - type: Documentation
+    url: https://offendersearch.app/docs.md
+  - type: APIReference
+    url: https://offendersearch.app/docs
+  - type: GettingStarted
+    url: https://offendersearch.app/docs/quickstart
+  - type: DeveloperPortal
+    url: https://offendersearch.app/background-check-api
+  - type: Webhooks
+    url: asyncapi/offendersearch-api-webhooks.yml
+  - type: ToolCrosswalk
+    url: mcp/offendersearch-api-tool-crosswalk.yml
+  - type: Documentation
+    url: https://offendersearch.app/mcp-server
+  - type: Documentation
+    url: https://offendersearch.app/ai-integration
 maintainers:
-  - FN: Offendersearch, Inc.
-    url: https://offendersearch.app
+- FN: Offendersearch, Inc.
+  email: support@offendersearch.app
+  url: https://offendersearch.app
 generated:
   by: apis.io/add
   model: claude-opus-4-8
   confidence: 92
   at: '2026-08-18T09:56:38.860Z'
+common:
+- type: Overlay
+  url: overlays/offendersearch-api-openapi-overlay.yaml
+- type: AgenticAccess
+  url: agentic-access/offendersearch-api-agentic-access.yml
+- type: TrustCenter
+  url: security/offendersearch-api-trust-center.yml
+- type: DomainSecurity
+  url: security/offendersearch-api-domain-security.yml
+- type: Authentication
+  url: authentication/offendersearch-api-authentication.yml
+- type: WellKnown
+  url: well-known/offendersearch-api-well-known.yml
+- type: APICatalog
+  url: well-known/offendersearch-api-api-catalog.json
+- type: LLMsTxt
+  url: llms/offendersearch-api-llms.txt
+- type: Conventions
+  url: conventions/offendersearch-api-conventions.yml
+- type: Idempotency
+  url: conventions/offendersearch-api-conventions.yml
+- type: ErrorCatalog
+  url: errors/offendersearch-api-problem-types.yml
+- type: Lifecycle
+  url: lifecycle/offendersearch-api-lifecycle.yml
+- type: Conformance
+  url: conformance/offendersearch-api-conformance.yml
+- type: DataModel
+  url: data-model/offendersearch-api-data-model.yml
+- type: Packages
+  url: packages/offendersearch-api-packages.yml
+- type: Plans
+  url: plans/offendersearch-api-plans-pricing.yml
+- type: RateLimits
+  url: rate-limits/offendersearch-api-rate-limits.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: Pricing
+  url: https://offendersearch.app/pricing
+- type: SignUp
+  url: https://offendersearch.app/sign-up
+- type: Login
+  url: https://offendersearch.app/sign-in
+- type: TermsOfService
+  url: https://offendersearch.app/terms
+- type: PrivacyPolicy
+  url: https://offendersearch.app/privacy
+- type: Support
+  url: https://offendersearch.app/contact
+x-enrichment:
+  date: '2026-08-18'
+  status: enriched
+  artifacts_added: 28
+  pass: local-v1
+x-personal-data:
+  facet: This API returns records about identifiable natural persons — US sex-offender registry entries,
+    name-matched and scored.
+  reviewed: '2026-08-18'
+  disposition: retained-with-annotation
+  basis: Retained under the people-facet rule rather than suppressed. Every operation is authenticated
+    (X-API-Key) and billed — an unkeyed call returns 402 — against public registry data the provider aggregates
+    as its stated business. That is categorically different from an unadvertised unauthenticated endpoint
+    leaking PII the operator does not know is open, which is the case the suppression rule exists for.
+    No agent skill or MCP tool here grants access that a paid account does not already grant.
+  checks_run:
+  - Scanned every generated artifact for real-person literals — names, DOB, street addresses, SSN-shaped
+    strings. None found.
+  - The only name literals in this repo (Smith, Tony Wilson) are the PROVIDER's own documentation examples,
+    carried verbatim in openapi/_original/. No live API response was used as an example.
+  constraints_carried:
+  - Not a consumer reporting agency — results must not be the sole basis for an FCRA-governed decision.
+  - Some jurisdictions restrict commercial use — check legal.commercialUse on GET /v1/sources.
+  - A zero from a jurisdiction that did not finish means UNKNOWN, not NO MATCH. Never report "no record
+    found" while counts.sourcesIncomplete > 0.

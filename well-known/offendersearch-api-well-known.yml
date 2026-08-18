@@ -1,0 +1,67 @@
+generated: '2026-08-18'
+method: probed
+source: >-
+  Live probe of the /.well-known/ discovery surface on every host named in apis.yml
+  (baseURL) and in the OpenAPI servers[] block, 2026-08-18.
+description: >-
+  offendersearch.app serves a real RFC 9727 API catalog (application/linkset+json) at
+  /.well-known/api-catalog, naming the OpenAPI (JSON + YAML), the HTML and Markdown
+  documentation, the coverage page, the live per-jurisdiction source-health endpoint and
+  the terms of service. It is saved verbatim as offendersearch-api-api-catalog.json.
+  Every other well-known path 404s. The website host answers 404 with a Next.js HTML
+  error shell (15,981 bytes) rather than a plain 404 body; that is a miss, not a document.
+  The API host (api.offendersearch.app) answers 404 with {"detail":"Not Found"} on every
+  well-known path. No security.txt is served on either host, so no SecurityTxt pointer is
+  emitted. No agent card is served on either host or at either the current or legacy path.
+hosts:
+  - host: https://offendersearch.app
+    documents:
+      - path: /.well-known/api-catalog
+        status: 200
+        type: application/linkset+json; charset=utf-8
+        file: offendersearch-api-api-catalog.json
+      - path: /.well-known/security.txt
+        status: 404
+      - path: /.well-known/openid-configuration
+        status: 404
+      - path: /.well-known/oauth-authorization-server
+        status: 404
+      - path: /.well-known/oauth-protected-resource
+        status: 404
+      - path: /.well-known/ai-plugin.json
+        status: 404
+      - path: /.well-known/agent-card.json
+        status: 404
+      - path: /.well-known/agent.json
+        status: 404
+  - host: https://api.offendersearch.app
+    documents:
+      - path: /.well-known/api-catalog
+        status: 404
+      - path: /.well-known/security.txt
+        status: 404
+      - path: /.well-known/openid-configuration
+        status: 404
+      - path: /.well-known/oauth-authorization-server
+        status: 404
+      - path: /.well-known/oauth-protected-resource
+        status: 404
+      - path: /.well-known/ai-plugin.json
+        status: 404
+      - path: /.well-known/agent-card.json
+        status: 404
+      - path: /.well-known/agent.json
+        status: 404
+catalog_links:
+  service_desc:
+    - https://offendersearch.app/openapi.json
+    - https://offendersearch.app/openapi.yaml
+  service_doc:
+    - https://offendersearch.app/docs
+    - https://offendersearch.app/docs.md
+  service_meta:
+    - https://offendersearch.app/coverage
+  status:
+    - https://api.offendersearch.app/v1/sources
+  terms_of_service:
+    - https://offendersearch.app/terms

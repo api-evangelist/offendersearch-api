@@ -1,0 +1,46 @@
+generated: '2026-08-18'
+method: searched
+source: https://offendersearch.app/trust
+url: https://offendersearch.app/trust
+description: >-
+  Offendersearch publishes a Trust & Security page describing its security and compliance
+  posture. IMPORTANT — the page claims no completed third-party certification: it describes
+  "SOC 2-aligned controls" and the API documentation states "a formal SOC 2 examination is
+  underway". HIPAA is described as a "HIPAA-ready path" with a Business Associate Agreement
+  available to eligible enterprise accounts, not as a HIPAA attestation. Recorded here as
+  claimed posture, not as held certifications, so the catalog does not credit a certification
+  the provider has not asserted.
+certifications: []
+claims:
+  - name: SOC 2
+    status: in-progress
+    statement: >-
+      "SOC 2-aligned controls — access logging, change management, and monitoring aligned to
+      SOC 2 practices" (trust page); "a formal SOC 2 examination is underway"
+      (docs/authentication.md).
+    evidence:
+      - https://offendersearch.app/trust
+      - https://offendersearch.app/docs/authentication.md
+  - name: HIPAA
+    status: ready-path-with-baa
+    statement: >-
+      "HIPAA-ready + BAA — a BAA path for enterprise customers whose screening touches
+      protected health workflows."
+    evidence:
+      - https://offendersearch.app/trust
+      - https://offendersearch.app/hipaa
+controls:
+  encryption_in_transit: TLS
+  encryption_at_rest: AES-256 for stored records and reports
+  credential_storage: API key secrets hashed at rest, shown in full once at creation
+  key_lifecycle: Issue, scope, rotate and revoke keys independently; no downtime rotation window
+  tenant_isolation: Data scoped per account; one customer cannot read another's keys, usage or reports
+  audit_logging: Requests logged with account, timestamp and endpoint; usage visible to account owners
+regulatory_notes:
+  fcra: >-
+    Offendersearch states it is NOT a consumer reporting agency and results are NOT a consumer
+    report; results must not be the sole basis for an FCRA-governed decision.
+  jurisdictional_use: >-
+    Some jurisdictions restrict commercial use of sex-offender registry data; use is subject to
+    the provider's acceptable-use terms and applicable law, accepted at onboarding.
+contact: support@offendersearch.app

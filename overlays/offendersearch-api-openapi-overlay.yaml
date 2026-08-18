@@ -1,0 +1,297 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements — Offendersearch API
+  version: 1.0.0
+extends: https://offendersearch.app/openapi.json
+x-generated: '2026-08-18'
+x-method: generated
+x-source: openapi/_original/offendersearch-api-openapi.json
+x-description: 'Non-destructive enhancements API Evangelist derived for the published Offendersearch OpenAPI
+  3.1.0. It changes nothing the provider asserts: it adds a tag taxonomy (the spec declares no tags[]
+  and tags no operation), operationIds for the twelve admin operations that ship without one, info.contact
+  and info.termsOfService (both absent), and the Idempotency-Key header that the documentation defines
+  but the contract omits. The original spec is never mutated — see openapi/_original/.'
+actions:
+- target: $.info
+  description: Add machine-readable contact and terms to info — the spec ships neither, so a consumer
+    cannot resolve an owner or a licence from the contract alone.
+  update:
+    contact:
+      name: Offendersearch Support
+      email: support@offendersearch.app
+      url: https://offendersearch.app/about
+    termsOfService: https://offendersearch.app/terms
+- target: $
+  description: Declare the tag set this overlay applies. The published spec has no tags[] and no operation
+    is tagged, so every generator renders 36 operations as one flat list.
+  update:
+    tags:
+    - name: Search
+      description: Synchronous, asynchronous, batch and legacy-compatibility search across all 58 registries.
+    - name: Records
+      description: Fetch a single normalized record by recordId or uuid.
+    - name: Reports
+      description: Consolidated verification-report PDFs and per-registry proof documents.
+    - name: Coverage
+      description: Jurisdiction coverage catalog and live per-registry source health. Anonymous.
+    - name: Support
+      description: Send a message to the Offendersearch team.
+    - name: Account
+      description: Account, usage, team and billing — session-token surface.
+    - name: Keys
+      description: API key lifecycle — create, list, rotate, revoke.
+    - name: Admin
+      description: Internal ops surface behind the separate X-Admin-Key credential. Not part of the public
+        API.
+- target: $.paths['/v1/search'].post
+  description: Tag syncSearch as Search.
+  update:
+    tags:
+    - Search
+- target: $.paths['/v1/searches'].post
+  description: Tag asyncSearch as Search.
+  update:
+    tags:
+    - Search
+- target: $.paths['/v1/searches/{searchId}'].get
+  description: Tag getSearch as Search.
+  update:
+    tags:
+    - Search
+- target: $.paths['/v1/searches/{searchId}/proof'].post
+  description: Tag makeProof as Reports.
+  update:
+    tags:
+    - Reports
+- target: $.paths['/v1/report'].post
+  description: Tag makeReport as Reports.
+  update:
+    tags:
+    - Reports
+- target: $.paths['/v1/batch'].post
+  description: Tag batchSearch as Search.
+  update:
+    tags:
+    - Search
+- target: $.paths['/v1/proof-docs/{token}'].get
+  description: Tag getProofDoc as Reports.
+  update:
+    tags:
+    - Reports
+- target: $.paths['/v1/records/{recordId}'].get
+  description: Tag getRecord as Records.
+  update:
+    tags:
+    - Records
+- target: $.paths['/v1/sources'].get
+  description: Tag listSources as Coverage.
+  update:
+    tags:
+    - Coverage
+- target: $.paths['/v1/support'].post
+  description: Tag submitSupportMessage as Support.
+  update:
+    tags:
+    - Support
+- target: $.paths['/v1/compat/sexoffender'].post
+  description: Tag compatSexoffenderPost as Search.
+  update:
+    tags:
+    - Search
+- target: $.paths['/v1/compat/sexoffender'].get
+  description: Tag compatSexoffenderGet as Search.
+  update:
+    tags:
+    - Search
+- target: $.paths['/v1/auth/signup'].post
+  description: Tag signup as Account.
+  update:
+    tags:
+    - Account
+- target: $.paths['/v1/auth/login'].post
+  description: Tag login as Account.
+  update:
+    tags:
+    - Account
+- target: $.paths['/v1/account'].get
+  description: Tag getAccount as Account.
+  update:
+    tags:
+    - Account
+- target: $.paths['/v1/keys'].get
+  description: Tag listKeys as Keys.
+  update:
+    tags:
+    - Keys
+- target: $.paths['/v1/keys'].post
+  description: Tag createKey as Keys.
+  update:
+    tags:
+    - Keys
+- target: $.paths['/v1/keys/{keyId}/rotate'].post
+  description: Tag rotateKey as Keys.
+  update:
+    tags:
+    - Keys
+- target: $.paths['/v1/keys/{keyId}'].delete
+  description: Tag deleteKey as Keys.
+  update:
+    tags:
+    - Keys
+- target: $.paths['/v1/usage'].get
+  description: Tag getUsage as Account.
+  update:
+    tags:
+    - Account
+- target: $.paths['/v1/team'].get
+  description: Tag getTeam as Account.
+  update:
+    tags:
+    - Account
+- target: $.paths['/v1/team'].post
+  description: Tag inviteMember as Account.
+  update:
+    tags:
+    - Account
+- target: $.paths['/v1/team/{memberId}'].delete
+  description: Tag removeMember as Account.
+  update:
+    tags:
+    - Account
+- target: $.paths['/v1/billing'].get
+  description: Tag getBilling as Account.
+  update:
+    tags:
+    - Account
+- target: $.paths['/v1/admin/accounts'].get
+  description: Tag GET /v1/admin/accounts as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/v1/admin/warm-queries'].get
+  description: Tag GET /v1/admin/warm-queries as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/v1/admin/warm-queries'].post
+  description: Tag POST /v1/admin/warm-queries as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/v1/admin/warm'].post
+  description: Tag POST /v1/admin/warm as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/v1/admin/cache-stats'].get
+  description: Tag GET /v1/admin/cache-stats as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/v1/admin/scraper-health'].get
+  description: Tag GET /v1/admin/scraper-health as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/v1/admin/scraper-runs'].get
+  description: Tag GET /v1/admin/scraper-runs as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/admin/ingest'].post
+  description: Tag POST /admin/ingest as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/admin/ingest/rerun-failures'].post
+  description: Tag POST /admin/ingest/rerun-failures as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/admin/ingest/status'].get
+  description: Tag GET /admin/ingest/status as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/admin/freshness'].get
+  description: Tag GET /admin/freshness as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/admin/ingest/report'].get
+  description: Tag GET /admin/ingest/report as Admin.
+  update:
+    tags:
+    - Admin
+- target: $.paths['/v1/admin/accounts'].get
+  description: Add a missing operationId for GET /v1/admin/accounts — the published spec leaves all 12
+    admin operations without one, so no generator can name them.
+  update:
+    operationId: getV1AdminAccounts
+- target: $.paths['/v1/admin/warm-queries'].get
+  description: Add a missing operationId for GET /v1/admin/warm-queries — the published spec leaves all
+    12 admin operations without one, so no generator can name them.
+  update:
+    operationId: getV1AdminWarmQueries
+- target: $.paths['/v1/admin/warm-queries'].post
+  description: Add a missing operationId for POST /v1/admin/warm-queries — the published spec leaves all
+    12 admin operations without one, so no generator can name them.
+  update:
+    operationId: postV1AdminWarmQueries
+- target: $.paths['/v1/admin/warm'].post
+  description: Add a missing operationId for POST /v1/admin/warm — the published spec leaves all 12 admin
+    operations without one, so no generator can name them.
+  update:
+    operationId: postV1AdminWarm
+- target: $.paths['/v1/admin/cache-stats'].get
+  description: Add a missing operationId for GET /v1/admin/cache-stats — the published spec leaves all
+    12 admin operations without one, so no generator can name them.
+  update:
+    operationId: getV1AdminCacheStats
+- target: $.paths['/v1/admin/scraper-health'].get
+  description: Add a missing operationId for GET /v1/admin/scraper-health — the published spec leaves
+    all 12 admin operations without one, so no generator can name them.
+  update:
+    operationId: getV1AdminScraperHealth
+- target: $.paths['/v1/admin/scraper-runs'].get
+  description: Add a missing operationId for GET /v1/admin/scraper-runs — the published spec leaves all
+    12 admin operations without one, so no generator can name them.
+  update:
+    operationId: getV1AdminScraperRuns
+- target: $.paths['/admin/ingest'].post
+  description: Add a missing operationId for POST /admin/ingest — the published spec leaves all 12 admin
+    operations without one, so no generator can name them.
+  update:
+    operationId: postAdminIngest
+- target: $.paths['/admin/ingest/rerun-failures'].post
+  description: Add a missing operationId for POST /admin/ingest/rerun-failures — the published spec leaves
+    all 12 admin operations without one, so no generator can name them.
+  update:
+    operationId: postAdminIngestRerunFailures
+- target: $.paths['/admin/ingest/status'].get
+  description: Add a missing operationId for GET /admin/ingest/status — the published spec leaves all
+    12 admin operations without one, so no generator can name them.
+  update:
+    operationId: getAdminIngestStatus
+- target: $.paths['/admin/freshness'].get
+  description: Add a missing operationId for GET /admin/freshness — the published spec leaves all 12 admin
+    operations without one, so no generator can name them.
+  update:
+    operationId: getAdminFreshness
+- target: $.paths['/admin/ingest/report'].get
+  description: Add a missing operationId for GET /admin/ingest/report — the published spec leaves all
+    12 admin operations without one, so no generator can name them.
+  update:
+    operationId: getAdminIngestReport
+- target: $.paths./v1/searches.post
+  description: Document the Idempotency-Key request header. It is documented on the website (docs/async-and-webhooks.md)
+    but is absent from the contract, so a code generator produces a client that cannot send it.
+  update:
+    parameters:
+    - name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+      description: A unique client-generated token. A repeated key returns the ORIGINAL job rather than
+        starting — or billing — a second search.

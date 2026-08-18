@@ -1,0 +1,99 @@
+specification: API Commons Plans
+specificationVersion: '0.1'
+provider: Offendersearch
+providerId: offendersearch-api
+generated: '2026-08-18'
+created: '2026-08-18'
+modified: '2026-08-18'
+method: searched
+source: https://offendersearch.app/pricing
+sources:
+  - https://offendersearch.app/pricing
+  - https://offendersearch.app/openapi.json
+description: >-
+  Offendersearch is purely metered — there are no feature tiers, no per-seat fees and no
+  free tier. Every API call is $0.15 with weekly freshness included; the rate graduates
+  automatically to $0.11 for every call beyond 2,000 in a calendar month. Two per-request
+  add-ons sit on top of whatever per-call rate applies: daily freshness (the default) adds
+  $0.01 per call, and a verification-report PDF (POST /v1/report) adds $0.02 per document.
+  Billing (credit card or ACH, via Stripe) is mandatory to activate a key — without a
+  payment method the key stays disabled and the API returns 402. In a batch, each search
+  is billed as its own call, so a 1,000-row batch is 1,000 billable searches. All rates are
+  metered defaults an admin can override per customer, and enterprise pricing is negotiable.
+plan_count: 2
+currency: USD
+billing:
+  model: usage-based / metered
+  required: true
+  detail: >-
+    A valid payment method (credit card or ACH bank debit) is required before a key becomes
+    ACTIVE. No payment method means the key is disabled and calls return 402 Payment Required.
+  processor: Stripe
+  free_tier: false
+  free_call_exception: >-
+    The only free call is one scoped exclusively to statutorily non-commercial jurisdiction(s)
+    (e.g. state=CA), which carries nothing commercially billable (OpenAPI info.description).
+plans:
+  - id: offendersearch-per-call
+    name: Per call
+    type: usage-based
+    price: 0.15
+    currency: USD
+    unit: API call
+    period: per-call
+    description: >-
+      The base rate — nationwide coverage in one call, no per-seat or minimum fees. Weekly
+      freshness included at this rate.
+    included:
+      - Nationwide coverage in a single call
+      - Scored matches with matchConfidence + matchBasis
+      - Per-source provenance and citations
+      - Per-request freshness (weekly free; daily is the default and adds $0.01)
+      - Synchronous, asynchronous and batch modes
+      - Drop-in offenders.io compatibility endpoint
+  - id: offendersearch-volume
+    name: Volume tier
+    type: usage-based
+    price: 0.11
+    currency: USD
+    unit: API call
+    period: per-call
+    threshold: 2000 calls per calendar month
+    description: >-
+      Graduated automatically: the first 2,000 calls each calendar month bill at $0.15, every
+      call after that bills at $0.11. In a batch, each search counts as one call.
+add_ons:
+  - id: daily-freshness
+    name: Daily freshness
+    price: 0.01
+    currency: USD
+    unit: per call
+    default: true
+    description: >-
+      A per-request choice (freshness=daily), not a tier and not a key setting. Every call
+      defaults to daily — the freshest snapshot of each registry. Set freshness=weekly for no
+      surcharge. In a batch, freshness applies per search, so each row bills at its own tier.
+  - id: verification-report
+    name: Verification report (PDF)
+    price: 0.02
+    currency: USD
+    unit: per document
+    operation: makeReport
+    description: >-
+      A separate API call (POST /v1/report) any valid key can make — no per-key entitlement.
+      Pass the searchId of a search run within the last 7 days to get a branded, timestamped
+      PDF with a source citation on every record. Only the +$0.02 PDF is billed; the search
+      was already billed.
+  - id: proof-docs
+    name: Per-registry look-alike proof docs
+    price: null
+    currency: USD
+    unit: per document
+    operation: makeProof
+    description: >-
+      An internal add-on (POST /v1/searches/{searchId}/proof) that carries an extra
+      per-document charge and requires billing (402 otherwise). Price is not published;
+      it is NOT the customer verification report.
+overrides: >-
+  All rates are metered defaults; an admin can override any rate (base, volume, daily
+  surcharge, per-PDF) per customer, and enterprise customers can negotiate custom pricing.

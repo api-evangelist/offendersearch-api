@@ -1,0 +1,723 @@
+openapi: 3.2.0
+info:
+  title: Offendersearch Compat API
+  version: 1.0.0
+  description: "National sex-offender search across all US states and territories, unified behind one API. Synchronous by default (call and wait) for interactive use; an asynchronous mode returns a job handle and is built for batch and high-volume work. Full offenders.io field parity plus scored matches, per-source provenance, freshness options, DOB/age match-state fidelity, and a consolidated verification-report PDF (`POST /v1/report`) with a source citation on every record. Criminal records land later as an additive `recordType` — the contract does not change.\n\n## Authentication\nMost customer endpoints authenticate with an API key sent in the `X-API-Key` header (`ApiKeyAuth`). The primary synchronous search additionally accepts a signed **session token** (`Authorization: Bearer <token>`) so the dashboard console can run searches on behalf of a signed-in user. The offenders.io compatibility endpoint accepts the key three ways for drop-in parity: `X-API-Key`, `Authorization: Bearer <key>`, or `?key=<key>`. Account/dashboard endpoints (`/v1/account`, `/v1/keys`, `/v1/usage`, ...) require a session token. Internal ops endpoints require the separate `X-Admin-Key` credential.\n\n## Freshness & billing\n`freshness` is a per-request parameter with two values — `daily` (the DEFAULT when omitted) and `weekly`.\n\n* **`daily`** is the freshest data we publish. Our sweep of every registry runs\n  on a daily cycle, so a `daily` answer is assembled from the newest snapshot we\n  hold of each one — in practice, almost real time. Ask for it when currency is\n  the point. It bills the **+$0.01/call daily-freshness surcharge** on top of the\n  base per-call rate (admin-overridable per customer).\n* **`weekly`** is also fresh. Identity is essentially identical to `daily` — the\n  same people, names, aliases, offenses, addresses and photos — and what can lag\n  is only the most recent movement, a registration or an address change from the\n  last day or so. Right for bulk screening and periodic re-screens. **No\n  surcharge.**\n\n\n**`freshness` describes the answer; it does not filter it.** No registry is ever withheld from a result because of when it was last swept: every registry covering the query contributes, from the newest snapshot we hold of it. `status` never becomes `partial` for a snapshot age, and `warnings[]` never carries a staleness sentence.\n\n**★ EVERY DATE IS ISO-8601 — BREAKING CHANGE, 2026-08-04.** Every date-shaped field in a record now comes back as ISO-8601: `dob`, the four `offense.*Date` fields, and the five `stateData` date fields. They used to be the registry's own string passed through byte-for-byte, so a single response could carry `\"2003-03-31\"`, `\"10/11/1988\"`, `\"11-29-1987\"` and `\"Aug. 10, 1987\"` in the same key — `offense.offenseDate` was ISO on only 45.4% of its populated values, in seven distinct shapes. **If you wrote a lenient parser or a per-state format table, you can delete it; if you compared these values as raw strings, or stored them in a text column and matched on it, those comparisons will change once.**\nThree rules govern the new values, and the third is the one to read carefully:\n1. A full date is `YYYY-MM-DD`. 2. **A partial date stays partial.** A registry that publishes only a month or\n   only a year yields `YYYY-MM` or `YYYY` — we never invent a day. The companion\n   `datePrecision` object on `offense` and `stateData` names the precision\n   explicitly, exactly as `dobPrecision` has always done for `dob`.\n3. **Nothing is discarded.** A value we cannot read as a date — a crime\n   description in an offence-date cell, a `registrationEnds` of \"Life\" — is NOT\n   served as a fake date and NOT silently blanked. The field is `\"\"`, the\n   precision is `unparseable`, and the registry's literal text is preserved in\n   the `datesAsPublished` object beside it.\n\n`source.scrapedAt` / `.lastCheckedAt` / `.sourceUpdatedAt` were already ISO-8601 timestamps and are unchanged. `dob` was already `YYYY-MM-DD` and is unchanged.\n\n**There is no date FILTER on the offense or stateData dates.** `dob` is the one date you can narrow a query on; read the rest off the record.\n**Provenance is never traded for normalisation.** The registry's own text is kept beside the normalised value, not overwritten by it, which is why `datesAsPublished` still carries what the source actually printed — including the 38,818 `registrationEnds` cells that hold a registration DURATION (\"15 Years\", \"Lifetime\") rather than a date.\n\n**Where currency is published — and where it is not.** Per record, `record.source.scrapedAt` is the moment we ingested the snapshot that record came from. Per registry, `GET /v1/sources` publishes `health.lastSuccessAt` and `health.ageSeconds` live and without an API key. Both are things you ask for. Neither is attached to a search answer: `sourceStatus[]` carries no age fields, because an answer that contains every matching record does not need a caveat about our sweep schedule.\n\n★ **Freshness and completeness are different questions, and only one of them makes an empty result unsafe.** `freshness` says how OLD an answer is; it says nothing about whether the answer is WHOLE. A registry swept ten minutes ago can still fail to be searched to the end — a deadline, or a candidate set larger than one search may examine — and then a `0` from it means UNKNOWN, not NO MATCH. That is `counts.sourcesIncomplete` / `sourceStatus[].incomplete`, it is unrelated to freshness, and it is the one signal that must never be ignored. See API-CONTRACT.md §5.0.\n\n**Migrating from a pre-2026-08-04 integration.** `counts.sourcesStale`, `counts.sourcesDegraded`, `counts.sourcesOmitted`, `counts.recordsFromStaleSources`, `freshnessDetail`, and `sourceStatus[].freshnessSatisfied` / `.degraded` / `.omitted` / `.ageSeconds` / `.lastSuccessAt` were removed and are no longer emitted. If you were gating on any of them, gate on `counts.sourcesIncomplete` instead — it asks whether your ANSWER is whole, which is the question those keys were being used to ask. `onStale` is deprecated but still accepted, so an older request body keeps working.\n\nBilling is required for every account; the ONLY free call is one scoped exclusively to statutorily non-commercial jurisdiction(s) (e.g. state=CA), which has nothing commercially billable. **Batch billing is per-search:** `POST /v1/batch` is one HTTP request but each search in it is billed as its own search (per-row freshness included) — a batch of 100 = 100 billable searches. The consolidated verification report (`POST /v1/report`) is a separate, callable endpoint any valid key may use (no per-key entitlement), billed **+$0.02 per document** (admin-overridable per customer). A separate `proof` add-on also carries an extra per-document charge and requires billing (402 otherwise); it is NOT the customer verification report.\n"
+servers:
+- url: https://api.offendersearch.app
+security:
+- ApiKeyAuth: []
+tags:
+- name: Compat
+paths:
+  /v1/compat/sexoffender:
+    post:
+      operationId: compatSexoffenderPost
+      summary: offenders.io drop-in compatibility (POST)
+      description: 'Accepts offenders.io''s exact parameters and returns their exact envelope ({offenders, page, totalPages[, error]}). Existing offenders.io integrations switch by changing only the base URL and key. Accepts the key via `X-API-Key`, `Authorization: Bearer`, or `?key=`. Echoes/mints the offenders.io correlation headers (`X-Request-Id`, `X-Offenders-Request-Id`, `X-Offendersearch-Request-Id`). Errors use the offenders.io `{code, message}` shape.
+
+
+        **Combination-validation (400 with `{code:400, message}`):** `q` cannot be combined with `firstName`/`lastName`, nor with `lat`/`lng`; `address` cannot be combined with `q`, nor with `lat`/`lng`.
+
+
+        **GIS search (`lat`+`lng` supplied):** results are paged **50 per page** (regular searches page 20), and the query defaults to the **last 90 days** of source updates (`updatedAtStart = now − 90d`) unless the caller supplies an explicit `updatedAtStart`. A missing `radius` defaults to 1 mile (capped at 100).
+
+        '
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+      - QueryKeyAuth: []
+      parameters:
+      - name: X-Request-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9._:-]{1,64}$
+        description: Optional client correlation id; echoed back when valid.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OffendersIoRequest'
+      responses:
+        '200':
+          description: offenders.io-shaped response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OffendersIoResponse'
+        '400':
+          description: 'Invalid parameter combination: `q` with firstName/lastName or lat/lng, or `address` with q or lat/lng. Body is `{code:400, message}`.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompatError'
+        '401':
+          description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompatError'
+        '422':
+          description: faceId supplied (facial search not supported).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompatError'
+      tags:
+      - Compat
+    get:
+      operationId: compatSexoffenderGet
+      summary: offenders.io drop-in compatibility (GET)
+      description: 'Identical semantics to the POST form; parameters are supplied as query string values (offenders.io demo/GET mode). Accepts the key via `X-API-Key`, `Authorization: Bearer`, or `?key=`.
+
+        '
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+      - QueryKeyAuth: []
+      parameters:
+      - name: firstName
+        in: query
+        schema:
+          type: string
+      - name: lastName
+        in: query
+        schema:
+          type: string
+      - name: dob
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: age
+        in: query
+        schema:
+          type: integer
+      - name: city
+        in: query
+        schema:
+          type: string
+      - name: state
+        in: query
+        schema:
+          type: string
+      - name: zipcode
+        in: query
+        schema:
+          type: string
+      - name: address
+        in: query
+        schema:
+          type: string
+      - name: lat
+        in: query
+        schema:
+          type: number
+      - name: lng
+        in: query
+        schema:
+          type: number
+      - name: radius
+        in: query
+        schema:
+          type: number
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: fuzzy
+        in: query
+        schema:
+          type: boolean
+      - name: mode
+        in: query
+        schema:
+          type: string
+          enum:
+          - extensive
+      - name: prefixMatch
+        in: query
+        schema:
+          type: string
+          enum:
+          - firstName
+          - lastName
+          - both
+      - name: faceId
+        in: query
+        schema:
+          type: string
+      - name: createdAtStart
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: createdAtEnd
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: updatedAtStart
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: updatedAtEnd
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: uuid
+        in: query
+        schema:
+          type: string
+      - name: personUuid
+        in: query
+        schema:
+          type: string
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: perPage
+        in: query
+        schema:
+          type: integer
+      - name: key
+        in: query
+        schema:
+          type: string
+        description: API key (offenders.io demo mode); alternative to the header.
+      - name: X-Request-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9._:-]{1,64}$
+      responses:
+        '200':
+          description: offenders.io-shaped response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OffendersIoResponse'
+        '400':
+          description: Invalid parameter combination.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompatError'
+        '401':
+          description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompatError'
+        '422':
+          description: faceId supplied (facial search not supported).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompatError'
+      tags:
+      - Compat
+components:
+  schemas:
+    OffendersIoOffender:
+      type: object
+      description: 'offenders.io''s flat offender object — every one of their 38 keys, plus additive extras (personUuid, county, stateData, matchConfidence). lat/lng default to -1 (their missing/needs-geocoding sentinel), not null.
+
+        '
+      properties:
+        uuid:
+          type: string
+        personUuid:
+          type: string
+          description: Additive.
+        name:
+          type: string
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        firstName_nicknames:
+          type: array
+          items:
+            type: string
+          description: 'First-name nickname/variant expansion for search recall (parity with offenders.io `firstName_nicknames`; e.g. "Jonathan" -> ["john","nathan"]). Mirrors the native Record.nicknames field.
+
+            '
+          example:
+          - john
+          - johnny
+        aliases:
+          type: array
+          items:
+            type: object
+            properties:
+              givenName:
+                type: string
+              middleName:
+                type: string
+              surName:
+                type: string
+        dob:
+          type: string
+          nullable: true
+          description: 'UTC midnight ISO, e.g. `1990-01-15T00:00:00.000Z` — the incumbent''s shape, reproduced for drop-in compatibility.
+
+
+            ★ **null when `dobPrecision` is `year`.** This timestamp format has no way to say "a birth year, and nothing finer", and we will not fill the gap with a January-1 placeholder. The year is not lost: the native `/v1/search` response carries `birthYear: 1976` for the same record. Note the incumbent DOES emit a Jan-1 timestamp here for those registrants — so on this field they look more complete than us and are in fact less accurate.
+
+            '
+        dobPrecision:
+          type: string
+          enum:
+          - exact
+          - year
+          - year_month
+          - unknown
+          description: See `Record.dobPrecision`. Authoritative — read it before trusting `dob`.
+        sex:
+          type: string
+          description: 'Free text, registry vocabulary, NOT an enum. "" when we hold nothing. "Male" and "M" (and "F"/"Female") occur in the SAME response when a search spans registries — normalize before grouping. MAINE and the DISTRICT OF COLUMBIA are a special case worth knowing: neither registry''s own website publishes a sex anywhere, so these values come from the jurisdiction''s own federal NSOPW feed and use that feed''s "M"/"F"/"U" vocabulary. Fill measured 2026-08-04: ME 99.7% (2,880 of 2,888), DC 97.2% (1,028 of 1,058); the residue is records we could not join with certainty and is left empty rather than guessed.
+
+            '
+        age:
+          type: string
+        race:
+          type: string
+          description: 'Free text, registry vocabulary, NOT an enum. "" when unknown. IMPORTANT: several registries (California among them) publish ONE column covering race and ethnicity; we route Hispanic values to `ethnicity` and everything else to `race`, so for those states the two keys are MUTUALLY EXCLUSIVE and reading `race` alone drops every Hispanic registrant. California measured 2026-08-04: race 51%, ethnicity 48%, either 99.4%. Compute coverage on (race || ethnicity). ME and DC publish NO race on any surface they render (checked live 2026-08-04 on both of Maine''s profile renderings, and on DC''s ArcGIS layer, roster and CSOSA bulletin) and their federal feeds carry none either, so "" is final there, and there is no ethnicity to fall back to. The national index (NSOPW) publishes no race, ethnicity, height, weight, eyeColor, hairColor or marks on any record of any of the 158 jurisdictions it federates — its API carries ten keys and none of these is among them. A person held by BOTH a state registry and the national index is returned as ONE record carrying the STATE registry''s physical description, with both registries listed in `sources[]`; a person only the national index reaches carries "" for these keys. Tribal registrants are read from the tribe''s own per-registrant page and carry them normally.
+
+            '
+        ethnicity:
+          type: string
+          description: 'Free text. "" is the common case (67%). Observed values include "Hispanic", "Non-Hispanic", "Not Hispanic", "Unknown" — normalize before grouping. See `race` for the single-column registries.
+
+            '
+        height:
+          type: string
+        weight:
+          type: string
+        eyeColor:
+          type: string
+        hairColor:
+          type: string
+        marks:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zipcode:
+          type: string
+        county:
+          type: string
+          description: Additive.
+        lat:
+          type: number
+          description: -1 when missing.
+        lng:
+          type: number
+          description: -1 when missing.
+        locations:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              streetAddress:
+                type: string
+              city:
+                type: string
+              state:
+                type: string
+              zipCode:
+                type: string
+              county:
+                type: string
+              latitude:
+                type: number
+              longitude:
+                type: number
+              fromDate:
+                type: string
+              toDate:
+                type: string
+        crime:
+          type: string
+        riskLevel:
+          type: string
+          description: 'The registry''s own classification of this registrant, whichever kind that registry publishes: a risk tier where one exists (`"Tier 3"`, `"MODERATE"`), otherwise the statutory designation (`"Sexual Predator"`, `"Sexual Offender"`). `""` when the registry publishes neither. **Not comparable across states**, and `""` never means low risk — many states run no risk scheme at all. It is NOT a registration status: for whether the registrant is confined, absconded, deported or deceased, read `stateData.status` or the `isAbsconder` boolean. Where a state publishes a statutory DESIGNATION instead of a tier (**Florida**: `"Sexual Predator"` / `"Sexual Offender"` / `"Juvenile Sexual Offender"`), that designation is carried in `stateData.designation` and mirrored by `isPredator`; send `mode=extensive` and it also fills this key, since `stateData` is only resolved in that mode.
+
+            '
+        registrationDate:
+          type: string
+          nullable: true
+        isAbsconder:
+          type: boolean
+          nullable: true
+        isPredator:
+          type: boolean
+          nullable: true
+        offenderUrl:
+          type: string
+        offenderImageUrl:
+          type: string
+        offenderImageUrlR2:
+          type: string
+          description: Their rehosted-CDN field — always empty for us.
+        jurisdiction:
+          type: string
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              url:
+                type: string
+        content:
+          type: string
+          description: Pre-formatted HTML summary (parity).
+        createdAt:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          nullable: true
+        stateData:
+          oneOf:
+          - $ref: '#/components/schemas/StateData'
+          - type: 'null'
+          description: Additive; null unless mode=extensive.
+        matchConfidence:
+          type: number
+          nullable: true
+          description: Additive.
+    CompatError:
+      type: object
+      description: 'offenders.io-shaped error body (returned by the /v1/compat/sexoffender endpoint instead of the standard `{detail}` shape).
+
+        '
+      properties:
+        code:
+          type: integer
+          example: 401
+        message:
+          type: string
+          example: Missing or invalid API key.
+    StateData:
+      type: object
+      description: 'Parity: offenders.io extensive stateData (retained only for include=stateData/extensive).'
+      properties:
+        stateOffenderId:
+          type: string
+        status:
+          type: string
+          description: 'Where the registrant stands with the registry, in the registry''s own words, or `""`. This is the key that answers *is this person still at liberty?* — and it is distinct from `offense.riskLevel`, which carries a risk classification. Free text, per state: **Florida (FDLE)** publishes nine values — `"Released - Subject to Registration"`, `"Confinement"`, `"Supervised - FL Dept of Corrections"`, `"Supervised - US Probation"`, `"Supervised - FL Dept of Juvenile Justice"`, `"Deported"`, `"Deceased"`, `"Absconded"`, `"Civil Commitment"` — while other states use their own (`"Compliant"`, `"Non-Compliant"`, …). **Match on the exact strings a given state publishes; there is no cross-state enum.** Two of these conditions also have booleans you can read without string matching: `flags.absconder` and, where published, `stateData.incarcerationStatus`.
+
+
+            ★ **Georgia (GBI)** publishes this instead of an address for registrants it records as moved out of state, deceased, homeless, incarcerated outside Georgia, or out of the country — e.g. `"*** MOVED OUT OF STATE ***"`, `"*** INCARCERATED - OUT OF STATE ***"`, `"ABSCONDER (Address Unknown)"`. Georgia''s coverage is built from GBI''s per-registrant pages as well as its bulk export, so these registrants are returned like any other; read `stateData.status` for why `addresses[]` may be empty on them, and note that address- and radius-filtered queries cannot reach them.
+
+            '
+        designation:
+          type: string
+          description: 'The registry''s statutory CLASSIFICATION of the offender, verbatim — e.g. `"Sexual Predator"`, `"Sexual Offender"`, `"Juvenile Sexual Offender"` — or `""`. Distinct from a risk tier. Where a registry distinguishes a predator class, `flags.predator` mirrors it as a boolean.
+
+            '
+        registrationEnds:
+          type: string
+          description: 'When the registration TERM ends. ISO-8601 (`YYYY-MM-DD` / `YYYY-MM` / `YYYY`) or `""`. ★ READ `datePrecision.registrationEnds` BEFORE YOU TRUST AN EMPTY VALUE HERE. 49,961 records publish something in this field that is not a date at all but a DURATION or a lifetime marker — Wisconsin "15 Years" / "25 Years" / "Life" (25,218), Oklahoma "Lifetime" (6,606), North Dakota "LIFETIME" (742). Those come back as `""` with precision `unparseable` and the literal text in `datesAsPublished`, because a date-typed key must hold a date or nothing. They are NOT missing data, and reading `""` here as "no end date on file" would be wrong for exactly those registrants — check `datesAsPublished.registrationEnds`, and see also `isLifetimeRegistration` and `registrationDuration`.
+
+            '
+        datePrecision:
+          type: object
+          additionalProperties:
+            type: string
+            enum:
+            - exact
+            - year_month
+            - year
+            - none
+            - unparseable
+          description: 'How much of each date this registry published, one entry for every date key on this object — `registrationEnds`, `lastVerificationDate`, `addressVerificationDate`, `sentenceCompletionDate`, `registrationStarts` — always all five, always present. Values as documented on `Offense.datePrecision`.
+
+            '
+        datesAsPublished:
+          type: object
+          additionalProperties:
+            type: string
+          description: 'The registry''s ORIGINAL text for any date key on this object whose published form differs from what we now emit; `{}` when none do. This is where "Life", "15 Years" and "Lifetime" live after normalisation — they are preserved, not discarded.
+
+            '
+        verificationRequirement:
+          type: string
+        lawAgency:
+          type: string
+        judgmentOfConvictionUrl:
+          type: string
+          format: uri
+        vehicles:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              plate:
+                type: string
+                description: 'Plate as printed, usually state-prefixed: "UT F814NW".'
+              make:
+                type: string
+                description: '"Ford", "Kawasaki", "General Motors".'
+              model:
+                type: string
+                description: '"F150", "Motorcycle" — free text, sometimes a class rather than a model.'
+              year:
+                type: string
+                description: 'STRING, not an integer: "2018".'
+              color:
+                type: string
+                description: '"White", "Black Green (Light)" — registry vocabulary, not normalized.'
+          description: 'Vehicles the registrant has reported to the registry. Keys are not guaranteed: the five above are what the OffenderWatch cluster prints, and other registries publish different ones — always read defensively. `[]` is AMBIGUOUS and carries three different facts that the response cannot separate: this person reported no vehicle, this registry does not publish vehicles at all, or the detail page has not been fetched for this record yet. Treat `[]` as "no vehicle known", never as "no vehicle owned". Populated in 22 jurisdictions; among records that HAVE a detail page, roughly 27-69% carry at least one (FL 27%, PA 44%, OH 58%, LA 61%).
+
+            '
+        photos:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        complianceStatus:
+          type: string
+          description: e.g. compliant | non-compliant.
+        isLifetimeRegistration:
+          type: boolean
+          nullable: true
+          description: True when registration is for life.
+        lastVerificationDate:
+          type: string
+          description: 'When the offender last verified, ISO-8601 or `""`. ★ Format changed 2026-08-04: it was ISO on 85.9% of its populated values and `MM/DD/YYYY` on the rest, despite this description having claimed "ISO date" all along. It is ISO now.
+
+            '
+        addressVerificationDate:
+          type: string
+          description: 'When the address was verified (e.g. KS "Current as of"), ISO-8601 or `""`. ★ Format changed 2026-08-04 — previously ISO on 96.2% of populated values, `MM/DD/YYYY` on the rest.
+
+            '
+        incarcerationStatus:
+          type: string
+          description: e.g. incarcerated | released (e.g. SD IsInJail).
+        comments:
+          type: string
+          description: Free-text registry remarks.
+        criminalHistory:
+          type: string
+          description: Narrative / prior-history summary.
+        adjudication:
+          type: string
+          description: e.g. adult | juvenile.
+        registrationDuration:
+          type: string
+          description: e.g. 10 years | lifetime.
+        skinTone:
+          type: string
+          description: IA skin-tone descriptor (e.g. light | medium | dark).
+        residencyRestriction:
+          type: string
+          description: IA residency constraint (free text).
+        employmentRestriction:
+          type: string
+          description: IA employment constraint (free text).
+        exclusionZones:
+          type: array
+          items:
+            type: string
+          description: IA geographic zones the offender is barred from.
+        district:
+          type: string
+          description: DC police district.
+        psa:
+          type: string
+          description: DC Police Service Area.
+        quadrant:
+          type: string
+          description: DC quadrant (NW | NE | SW | SE).
+        birthCity:
+          type: string
+          description: Place of birth — city (WY DCI prints a 'Place Of Birth' row on every detail page).
+        birthState:
+          type: string
+          description: Place of birth — state.
+        birthCountry:
+          type: string
+          description: Place of birth — country.
+        sentenceCompletionDate:
+          type: string
+          description: 'Date the SENTENCE completes (OK''s "Completion of Sentence" row, present on roughly half of Oklahoma profiles). Distinct from `registrationEnds` (the registration TERM) and from `offense.releaseDate` (release from custody). ISO-8601 or `""`. ★ BREAKING 2026-08-04 — Oklahoma publishes this as `MM-DD-YYYY`, so 100% of its populated values changed shape.
+
+            '
+        registrationStarts:
+          type: string
+          description: 'Date registration began — the partner of `registrationEnds`. ISO-8601 or `""`. ★ EXPANDED 2026-08-09 from one jurisdiction to sixteen: Oklahoma ("Orig Reg Date"), Virginia ("Initial Registration Start Date"), Pennsylvania ("Registration Start"), Kansas ("Registered Since"), Wisconsin, North Carolina, Georgia, Illinois, Indiana, Delaware, Alaska, Puerto Rico, New Mexico, Wyoming, Guam and the District of Columbia. It is the FIRST registration, not the most recent one: registries that publish only a latest-registration or address event date (e.g. Oregon, Texas) leave this `""` rather than filling it with a different fact. ★ BREAKING 2026-08-04 — was `MM-DD-YYYY` on 100% of its populated values.
+
+            '
+        professionalLicenses:
+          type: array
+          items:
+            type: string
+          description: 'Professional / occupational licences the registrant holds, as free text exactly as the state prints them. Prose, not a structured licence table — do not parse. `[]` means the registry lists none for this person, or does not publish the section. ★ EXPANDED 2026-08-09: **Utah** (`Professional Licenses` tab — type, and often an expiry, e.g. `CDL Class A - Expires: 04-13-2030`) and **Hawaii** (`License Type` — the occupation alone, e.g. `PHYSICIAN`, `REAL ESTATE SALESPERSON`, `ELECTRICIAN JOURNEYMAN INDUSTRIAL`; no number and no expiry is published, so none is reported).
+
+            '
+        shoeSize:
+          type: string
+          example: 10½
+          description: 'Shoe size as Texas DPS records it, in the physical-description block beside height, weight, hair and eye colour. **Texas only** — `""` on every other jurisdiction, always, so an empty string here cannot be read as "this person has no shoe size on file" outside TX. A STRING, not a number: half sizes use the `½` character (`"09½"`) and leading zeros are kept as published. DPS''s explicit `UNKNOWN` literal is normalised to `""`. Fill: 72,289 of 107,939 present Texas registrants (67.0%), from the twice-weekly bulk export, so there is no detail-fetch lag.
+
+            '
+        build:
+          type: string
+          example: Large
+          description: 'Body build as the registry prints it, in the physical-description block beside skin tone, hair and eye colour. **Minnesota only**, and within Minnesota only its DOC community-notification cohort — 381 of 1,450 present Minnesota records (26.3%; 88.4% of that cohort''s 431). The BCA non-compliant cohort served under the same `MN` code publishes no build at all. FREE TEXT, not an enum: the live vocabulary measured over the whole cohort on 2026-08-04 is Medium 209, Large 77, Stocky 27, Slender 25, Small 22, Husky 13, Lean 7, Muscular 1. Minnesota''s own `Unknown` literal is normalised to `""`. An empty string means "this registry does not publish a build" — never "average build".
+
+            '
+        shoeWidth:
+          type: string
+          example: D
+          description: 'Shoe width as Texas DPS records it — a US last code (`D`, `EEE`, `B`), not a measurement. **Texas only**, same empty-string caveat and same `UNKNOWN` normalisation as `shoeSize`. NOTE: `""` on 100% of records until the next Texas bulk drop — the reader landed 2026-08-04 and no export has been ingested since.
+
+            '
+    OffendersIoRequest:
+      type: object
+      description: offenders.io parameters, accepted verbatim.
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dob:
+          type: string
+          format: date
+        age:
+          type: integer
+        city:
+          type: string
+        state:
+          type: string
+        zipcode:
+          type: string
+        address:
+          type: string
+          description: Cannot be combined with q or lat/lng (400).
+        lat:
+          type: number
+        lng:
+          type: number
+        radius:
+          type: number
+          description: Miles; defaults to 1 when a point is given, capped at 100. GIS pages are 50/page.
+        q:
+          type: string
+          description: Cannot be combined with firstName/lastName or lat/lng (400).
+        fuzzy:
+          type: boolean
+        mode:
+          type: string
+          enum:
+          - extensive
+        prefixMatch:
+          description: 'Partial-name search — the name is treated as the START of a name (min 3 characters), matched against aliases too. "both" prefixes first and last name together.
+
+            '
+          oneOf:
+          - type: string
+            enum:
+            - firstName
+            - lastName
+            - both
+          - type: array
+            items:
+              type: string
+              enum:
+              - firstName
+              - lastName
+        faceId:
+          type: string
+          description: Not supported — returns 422.
+        createdAtStart:
+          type: string
+          format: date-time
+        createdAtEnd:
+          type: string
+          format: date-time
+        updatedAtStart:
+          type: string
+          format: date-time
+          description: GIS searches default to the last 90 days of updates unless this is set.
+        updatedAtEnd:
+          type: string
+          format: date-time
+        uuid:
+          type: string
+          description: 'Direct record lookup (parity), database-backed since 2026-08-04. Pass the `uuid` a search returned. BEFORE that date this accepted only our internal `rec_…` id, so feeding back the `uuid` this same endpoint publishes returned an empty `offenders` array 100% of the time. An empty result means the id is not CURRENT (registries re-issue ids in bulk), not that the person is unregistered — re-search by name and state. Combine with `state` when the id may be shared across jurisdictions; without it every match is returned.
+
+            '
+        personUuid:
+          type: string
+          description: Alias of `uuid` for direct record lookup (parity). Same semantics.
+        page:
+          type: integer
+          default: 1
+        perPage:
+          type: integer
+    OffendersIoResponse:
+      type: object
+      description: offenders.io envelope, returned verbatim for compat.
+      properties:
+        offenders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OffendersIoOffender'
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        error:
+          type: integer
+          nullable: true
+          description: 'offenders.io convention: present (e.g. 503) when the result set may be incomplete (deadline-partial or a source errored).'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Customer API key. Primary auth for search/records/compat/proof.
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'Signed session token (HMAC-SHA256). Auth for account/dashboard endpoints; also accepted by POST /v1/search and the compat endpoint.
+
+        '
+    QueryKeyAuth:
+      type: apiKey
+      in: query
+      name: key
+      description: API key passed as `?key=` — offenders.io demo mode (compat endpoint only).
+    AdminAuth:
+      type: apiKey
+      in: header
+      name: X-Admin-Key
+      description: Internal admin credential — separate from customer API keys.

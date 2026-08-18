@@ -1,0 +1,132 @@
+generated: '2026-08-18'
+method: derived
+source: >-
+  openapi/offendersearch-api-openapi.yml, https://offendersearch.app/docs.md,
+  https://offendersearch.app/.well-known/api-catalog and https://offendersearch.app/trust —
+  each assertion below is evidenced from one of those, and every negative is a checked absence
+  rather than an assumption.
+description: >-
+  Cross-cutting standards conformance for the Offendersearch API. The headline finding is
+  positive and unusual: the provider serves a real RFC 9727 API catalog linkset, which fewer
+  than one provider in a hundred does. The headline negative is the error format — the docs
+  publish a proprietary {"error":{code,message}} envelope, the OpenAPI models a third-party
+  framework's {"detail"} shape, and neither is RFC 9457.
+standards:
+  - id: openapi-3.1
+    name: OpenAPI 3.1
+    conforms: true
+    evidence: >-
+      openapi 3.1.0 with 32 paths, 36 operations, 43 component schemas and four
+      securitySchemes, served at https://offendersearch.app/openapi.json (200,
+      application/json) and .yaml (200, text/yaml), and declared under service-desc in the
+      api-catalog with the correct application/vnd.oai.openapi+json;version=3.1 media type.
+  - id: rfc9727
+    name: 'RFC 9727 — API catalog (/.well-known/api-catalog)'
+    conforms: true
+    evidence: >-
+      https://offendersearch.app/.well-known/api-catalog returns 200 with
+      Content-Type application/linkset+json and a linkset[] anchored on
+      https://api.offendersearch.app carrying service-desc, service-doc, service-meta, status,
+      terms-of-service and author link relations.
+  - id: llmstxt
+    name: llms.txt
+    conforms: true
+    evidence: >-
+      https://offendersearch.app/llms.txt returns 200 text/plain in llms.txt form — H1, blockquote
+      summary, and sectioned link lists pointing at markdown twins of every docs page.
+  - id: rfc9457
+    name: 'RFC 9457 — Problem Details for HTTP APIs'
+    conforms: false
+    evidence: >-
+      No application/problem+json media type appears anywhere in the OpenAPI. Errors use a
+      proprietary {"error":{"code","message"}} envelope in the docs and a FastAPI-shaped
+      {"detail"} schema in the spec. See errors/offendersearch-api-problem-types.yml.
+  - id: rfc9116
+    name: 'RFC 9116 — security.txt'
+    conforms: false
+    evidence: '/.well-known/security.txt returned 404 on both offendersearch.app and api.offendersearch.app.'
+  - id: rfc8594
+    name: 'RFC 8594 — Sunset header / deprecation signalling'
+    conforms: false
+    evidence: >-
+      No Sunset or Deprecation response header is documented or declared, and fields were
+      removed on 2026-08-04 with no notice window. See lifecycle/offendersearch-api-lifecycle.yml.
+  - id: idempotency
+    name: Idempotent request replay (Idempotency-Key)
+    conforms: true
+    partial: true
+    evidence: >-
+      An Idempotency-Key request header is documented on POST /v1/searches — a repeated key
+      returns the original job rather than starting or billing a second search. It is NOT
+      offered on the synchronous POST /v1/search or on POST /v1/batch, and no retention window
+      is published. See conventions/offendersearch-api-conventions.yml.
+  - id: pagination
+    name: Documented pagination contract
+    conforms: true
+    evidence: >-
+      Offset pagination with query.page / query.perPage and page / perPage / totalPages in the
+      response envelope, stably ordered, with a documented 4,000-record unpaginated cap that
+      sets capped=true. https://offendersearch.app/docs/pagination.md
+  - id: rate-limit-headers
+    name: Rate-limit response headers
+    conforms: true
+    partial: true
+    evidence: >-
+      X-RateLimit-Limit / -Remaining / -Reset on every response and Retry-After on a 429 are
+      documented (docs/errors.md). These are the legacy X- forms, not the IETF draft
+      RateLimit-* fields, and no numeric ceiling is published. Not observable anonymously:
+      GET /v1/sources returned 200 with none of these headers on 2026-08-18.
+  - id: oauth2
+    name: OAuth 2.0
+    conforms: false
+    evidence: >-
+      No oauth2 securityScheme in the OpenAPI; auth is an X-API-Key header plus an internal
+      HMAC-signed session bearer token. No /.well-known/oauth-authorization-server (404).
+  - id: oidc
+    name: OpenID Connect
+    conforms: false
+    evidence: '/.well-known/openid-configuration returned 404 on both hosts.'
+  - id: webhook-signing
+    name: Signed webhook delivery
+    conforms: true
+    evidence: >-
+      X-Offendersearch-Signature carries an HMAC-SHA256 of the raw body; delivery is
+      at-least-once and de-duplicated on searchId.
+      https://offendersearch.app/docs/async-and-webhooks.md
+  - id: asyncapi
+    name: AsyncAPI
+    conforms: false
+    evidence: >-
+      No AsyncAPI document is published for the documented search.completed webhook, and the
+      OpenAPI declares no webhooks{} block.
+  - id: iso8601
+    name: 'ISO 8601 date/time representation'
+    conforms: true
+    evidence: >-
+      As of the 2026-08-04 breaking change every date-shaped record field returns ISO-8601,
+      with explicit partial-date precision (YYYY-MM / YYYY) and an "unparseable" precision
+      rather than a fabricated date. openapi info.description.
+  - id: fcra
+    name: 'Fair Credit Reporting Act (15 U.S.C. §1681)'
+    conforms: false
+    applicable: true
+    evidence: >-
+      The provider expressly disclaims it: "not a consumer report and not a consumer reporting
+      agency; results must not be the sole basis for an FCRA-governed decision" (llms.txt,
+      /trust, /terms). This is a scope declaration, not a failure — an FCRA-governed screening
+      decision requires a CRA, which this API is not.
+  - id: hipaa
+    name: HIPAA
+    conforms: partial
+    evidence: >-
+      "HIPAA-ready path" with a Business Associate Agreement available to eligible enterprise
+      accounts processing PHI. No HIPAA attestation is claimed.
+      https://offendersearch.app/trust
+  - id: soc2
+    name: SOC 2
+    conforms: false
+    in_progress: true
+    evidence: >-
+      "SOC 2-aligned controls" on the trust page and "a formal SOC 2 examination is underway"
+      in docs/authentication.md. No report, no Type I/II designation and no audit period are
+      published, so no certification is recorded. See security/offendersearch-api-trust-center.yml.

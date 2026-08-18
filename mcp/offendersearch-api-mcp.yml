@@ -1,0 +1,82 @@
+generated: '2026-08-18'
+method: searched
+status: announced-private-beta
+source: https://offendersearch.app/mcp-server
+description: >-
+  Offendersearch documents a hosted MCP server at https://mcp.offendersearch.app and publishes
+  its exact client config block and a final three-tool list. IT IS NOT REACHABLE. The provider
+  labels it "private beta — the server is built and the tools below are final, but the hosted
+  endpoint is not yet open to self-serve signups", and on 2026-08-18 the hostname
+  mcp.offendersearch.app did not resolve in DNS at all (NXDOMAIN), so no tools/list probe was
+  possible. api.offendersearch.app/mcp returns 404. Because no agent can reach this server, NO
+  `type: MCPServer` pointer is wired into apis.yml — wiring one would credit the provider with a
+  live agent surface that does not answer. The tool list below is captured verbatim from the
+  provider's own page (names and descriptions only); input schemas are not published anywhere
+  and cannot be introspected until the endpoint is open.
+server:
+  name: offendersearch
+  transport: http
+  url: https://mcp.offendersearch.app
+  auth: api-key
+  auth_header: X-API-Key
+  reachable: false
+client_config_published: |
+  {
+    "mcpServers": {
+      "offendersearch": {
+        "url": "https://mcp.offendersearch.app",
+        "headers": { "X-API-Key": "os_live_..." }
+      }
+    }
+  }
+tools:
+  - name: search_offenders
+    description: >-
+      A name, DOB, location or radius search over nationwide coverage. Returns the same
+      normalized, provenance-tagged records as the REST API.
+    input_schema: null
+    schema_note: Not published; requires authenticated introspection once the endpoint opens.
+  - name: batch_search
+    description: >-
+      Up to 1,000 queries in one call, one row in and one row out. Returns the same normalized,
+      provenance-tagged records as the REST API. Bills one metered search per row.
+    input_schema: null
+    schema_note: Not published; requires authenticated introspection once the endpoint opens.
+  - name: get_registry_coverage
+    description: >-
+      The public catalog of every registry covered, with its scope, legal status and health.
+      No API key required, and free.
+    input_schema: null
+    schema_note: Not published; backing REST operation listSources is anonymous and free.
+billing: >-
+  MCP tool calls are metered identically to REST calls — $0.15 per call ($0.11 after 2,000/mo),
+  weekly freshness included, daily freshness (the default) +$0.01 per call. batch_search bills
+  one metered search per row, not one per call. get_registry_coverage is free.
+alternative_agent_surface:
+  url: https://offendersearch.app/ai-integration
+  description: >-
+    The provider publishes a ready-made tool definition for any tool-calling model —
+    search_sex_offender_registry, backed by POST /v1/search — as the path that works today
+    while the MCP server is in private beta.
+probes:
+  - url: https://mcp.offendersearch.app
+    status: '000'
+    result: DNS resolution failed (NXDOMAIN) on 2026-08-18.
+  - url: https://mcp.offendersearch.app/mcp
+    status: '000'
+    result: DNS resolution failed (NXDOMAIN) on 2026-08-18.
+  - url: https://api.offendersearch.app/mcp
+    status: 404
+    result: '{"detail":"Not Found"}'
+deployment:
+  mode: remote
+  endpoint: https://mcp.offendersearch.app
+  install: null
+  package: null
+  auth: api-key
+  verified: probed
+  reachable: false
+  note: >-
+    The provider names a remote HTTPS endpoint an MCP client would POST to, so the intended
+    mode is remote — but the host does not resolve, so nothing is deployed today. No stdio
+    package is published on npm or PyPI. Re-probe before crediting an MCP surface.

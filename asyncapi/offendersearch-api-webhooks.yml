@@ -1,0 +1,63 @@
+generated: '2026-08-18'
+method: searched
+source: https://offendersearch.app/docs/async-and-webhooks.md
+description: >-
+  Offendersearch publishes NO AsyncAPI document — /asyncapi.yaml and /asyncapi.json are not
+  served, the OpenAPI declares no webhooks{} block, and the RFC 9727 api-catalog names only the
+  OpenAPI under service-desc. It does document one real, signed webhook: supply a webhookUrl on
+  an asynchronous search and the completed SearchResponse is POSTed to it. That webhook catalog
+  is captured here verbatim from the provider's documentation. Nothing below is fabricated and
+  no AsyncAPI has been authored on the provider's behalf.
+event_surface:
+  style: outbound HTTP webhook (callback URL supplied per request)
+  subscription_model: per-request — there is no webhook endpoint registry, no dashboard
+    subscription UI and no event-type selection. A webhookUrl on POST /v1/searches applies to
+    that one search.
+  asyncapi_published: false
+  probed:
+    - url: https://offendersearch.app/asyncapi.yaml
+      status: 404
+    - url: https://offendersearch.app/asyncapi.json
+      status: 404
+webhooks:
+  - name: search.completed
+    event: search.completed
+    trigger: An asynchronous search submitted with a webhookUrl finishes.
+    method: POST
+    target: The webhookUrl supplied on POST /v1/searches
+    content_type: application/json
+    payload_schema: SearchResponse (openapi/offendersearch-api-openapi.yml#/components/schemas/SearchResponse)
+    payload_example: |
+      {
+        "event": "search.completed",
+        "searchId": "srch_9f2a7c",
+        "status": "complete",
+        "counts": { "records": 3, "sourcesQueried": 58,
+                    "sourcesComplete": 58, "sourcesIncomplete": 0 },
+        "sourceStatus": [],
+        "records": []
+      }
+    source_operation: asyncSearch
+security:
+  signature_header: X-Offendersearch-Signature
+  algorithm: HMAC-SHA256 over the RAW request body, using the account signing secret
+  verification_guidance: >-
+    Compute the HMAC over the raw bytes BEFORE JSON parsing and compare in constant time
+    (the provider's own example uses crypto.timingSafeEqual). Reject on mismatch with a 400.
+  secret_provisioning: >-
+    Referred to as "your signing secret"; where it is issued or rotated is not documented.
+delivery:
+  guarantee: at-least-once
+  deduplicate_on: searchId
+  acknowledgement: Respond 2xx promptly.
+  retry: Non-2xx responses are retried with exponential backoff for several attempts.
+  retry_count: not published
+  ip_allowlist: not published
+  replay_ui: not published
+alternative_collection:
+  polling:
+    operation: getSearch
+    path: GET /v1/searches/{searchId}
+    description: >-
+      Poll until status is complete (or error). records fills in as jurisdictions complete;
+      a few seconds between polls is described as typical.

@@ -1,0 +1,211 @@
+generated: '2026-08-18'
+method: derived
+source: >-
+  openapi/offendersearch-api-openapi.yml — components.schemas $ref graph and id-reference
+  fields, cross-read against https://offendersearch.app/docs/record-object.md for the entity
+  descriptions and id shapes.
+description: >-
+  The Offendersearch object graph is shallow and deliberately so: one normalized Record schema
+  spans all 58 jurisdictions, and everything else is either a projection of a search (the
+  SearchResponse envelope), a per-jurisdiction status row, or account/billing furniture. The
+  interesting structure is inside Record — five embedded sub-objects (Name, Address, Offense,
+  SourceRef, StateData) where StateData is the deliberately non-normalized escape hatch
+  carrying 30 jurisdiction-specific fields that do not generalize.
+entities:
+  - name: Record
+    description: >-
+      One normalized person-on-a-registry record. The provider describes it as a 76-field
+      schema identical across every jurisdiction, with empty values meaning "this registry does
+      not publish this field", never "this is false".
+    id_field: recordId
+    alternate_id: uuid
+    id_note: >-
+      GET /v1/records/{recordId} accepts either recordId or uuid, and returns 409 when the
+      identifier matches records in more than one jurisdiction.
+    docs: https://offendersearch.app/docs/record-object.md
+    relationships:
+      - type: has_one
+        target: Name
+        via: name
+      - type: has_many
+        target: Name
+        via: aliases
+      - type: has_many
+        target: Address
+        via: addresses
+      - type: has_one
+        target: Offense
+        via: offense
+        note: The primary offense; offenses[] carries the full set.
+      - type: has_many
+        target: Offense
+        via: offenses
+      - type: has_many
+        target: SourceRef
+        via: sources
+        note: >-
+          Which jurisdictions this person appears on — the provenance array the whole product
+          rests on. Each carries its own scrapedAt / lastCheckedAt / sourceUpdatedAt.
+      - type: has_one
+        target: StateData
+        via: stateData
+      - type: belongs_to
+        target: SourceInfo
+        via: registrationState
+        note: Soft reference by jurisdiction code, not a $ref.
+  - name: Name
+    description: Structured personal name (first, middle, last, suffix, full). Used for both the legal name and each alias.
+    id_field: null
+    relationships: []
+  - name: Address
+    description: A published address with type, locality fields and coordinates. Radius search selects on these coordinates.
+    id_field: null
+    relationships: []
+  - name: Offense
+    description: >-
+      One conviction/registration offense — crime, statute, riskLevel, tier, four date fields,
+      plus the datePrecision and datesAsPublished companions that preserve the registry's
+      literal text alongside the ISO-8601 normalization.
+    id_field: caseNumber
+    relationships: []
+  - name: SourceRef
+    description: >-
+      Per-jurisdiction provenance for a record — registryName, the deep recordUrl into the
+      source registry, and three timestamps. This is what makes a result citable.
+    id_field: jurisdiction
+    relationships:
+      - type: belongs_to
+        target: SourceInfo
+        via: jurisdiction
+  - name: StateData
+    description: >-
+      The jurisdiction-specific overflow object — 30 fields (designation, registrationEnds,
+      complianceStatus, residencyRestriction, exclusionZones, birthCity …) that only some
+      registries publish and that deliberately are NOT normalized into Record.
+    id_field: stateOffenderId
+    relationships: []
+  - name: SearchResponse
+    description: >-
+      The search envelope. Carries the completeness contract (status, counts, sourceStatus[])
+      and pagination (page, perPage, totalPages, capped) around the records array. Returned
+      identically by the synchronous, asynchronous and webhook paths.
+    id_field: searchId
+    relationships:
+      - type: has_many
+        target: Record
+        via: records
+      - type: has_many
+        target: SourceStatus
+        via: sourceStatus
+      - type: has_one
+        target: ProofBundle
+        via: proof
+  - name: SourceStatus
+    description: >-
+      One row per jurisdiction the search touched — status, matched, fromCache, incomplete and
+      the closed incompleteReason enum. The row that tells you whether a 0 means NO MATCH or
+      UNKNOWN.
+    id_field: source
+    relationships:
+      - type: belongs_to
+        target: SourceInfo
+        via: source
+  - name: SourceInfo
+    description: >-
+      A jurisdiction in the coverage catalog (GET /v1/sources) — id, name, covers[], scope,
+      status, legal (commercial-use posture) and live health. Anonymous and free.
+    id_field: id
+    relationships: []
+  - name: Query
+    description: >-
+      The 24-field query object every search shares — name parts, dob/age, locality, lat/lng +
+      radiusMiles, free-text q, match controls (fuzzy, prefixMatch, nameMatch) and pagination.
+    id_field: null
+    relationships: []
+  - name: SearchRequest
+    description: The synchronous search body — a Query plus jurisdictions, recordTypes, freshness, match, include, proof and deadline controls.
+    id_field: null
+    relationships:
+      - type: has_one
+        target: Query
+        via: query
+      - type: has_one
+        target: ProofRequest
+        via: proof
+  - name: AsyncSearchRequest
+    description: The asynchronous search body — SearchRequest plus an optional webhookUrl.
+    id_field: null
+    relationships:
+      - type: extends
+        target: SearchRequest
+        via: allOf
+  - name: ReportRequest
+    description: >-
+      Verification-report body. Either re-states a Query or references the searchId of a search
+      run in the last 7 days, plus the requester/purpose fields printed onto the PDF.
+    id_field: searchId
+    relationships:
+      - type: has_one
+        target: Query
+        via: query
+      - type: belongs_to
+        target: SearchResponse
+        via: searchId
+  - name: ProofBundle
+    description: Per-registry look-alike proof documents produced for a search (internal add-on, not the customer verification report).
+    id_field: null
+    relationships: []
+  - name: Account
+    description: A customer account — org, email, billingEnabled, plan. Billing must be enabled before any key is ACTIVE.
+    id_field: id
+    relationships:
+      - type: has_many
+        target: ApiKey
+        via: /v1/keys
+      - type: has_one
+        target: Billing
+        via: /v1/billing
+      - type: has_one
+        target: Usage
+        via: /v1/usage
+      - type: has_many
+        target: TeamMember
+        via: /v1/team
+        note: Single-owner today — invite and remove return 400.
+  - name: ApiKey
+    description: An API key — id, name, maskedKey, status, lastUsedAt. The secret is returned once, by ApiKeyWithSecret, at creation or rotation.
+    id_field: id
+    relationships:
+      - type: belongs_to
+        target: Account
+        via: account
+  - name: Usage
+    description: Metered usage and spend for the current billing period, including proof-document counts and per-tier breakdown.
+    id_field: null
+    relationships:
+      - type: belongs_to
+        target: Account
+  - name: Billing
+    description: Billing state — payment method, current spend, soft cap, invoices.
+    id_field: null
+    relationships:
+      - type: belongs_to
+        target: Account
+compat_projection:
+  description: >-
+    A parallel, non-normalized projection of the same core exists for offenders.io drop-in
+    parity — OffendersIoRequest / OffendersIoResponse / OffendersIoOffender, the last of which
+    flattens Record and still embeds StateData. It is a compatibility shim, not a second model.
+  schemas: [OffendersIoRequest, OffendersIoResponse, OffendersIoOffender]
+  docs: https://offendersearch.app/docs/migration.md
+internal_only:
+  description: >-
+    Nine schemas serve the X-Admin-Key ops surface and are not part of the customer contract.
+  schemas: [AdminAccount, WarmQuery, WarmRunResult, ScraperRun, ScraperHealth, CacheStats, IngestStatus, IngestRegistryRow, IngestReport]
+id_prefixes:
+  - prefix: srch_
+    entity: SearchResponse
+    example: srch_9f2a7c
+  - prefix: os_live_
+    entity: ApiKey
+    note: API key secret prefix, from docs/authentication.md.

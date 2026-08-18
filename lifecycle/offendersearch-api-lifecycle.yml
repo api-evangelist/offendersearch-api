@@ -1,0 +1,119 @@
+generated: '2026-08-18'
+method: searched
+source: >-
+  https://offendersearch.app/docs.md and the OpenAPI info.description
+  (openapi/offendersearch-api-openapi.yml), plus live probes of /changelog, /status and
+  status.offendersearch.app on 2026-08-18.
+description: >-
+  Offendersearch versions its API in the URI path (/v1) and ships spec version 1.0.0. It
+  publishes NO dated changelog page, NO status page and NO deprecation-window policy. The
+  one breaking change on record — every date-shaped field becoming ISO-8601 on 2026-08-04,
+  together with the removal of six counts/sourceStatus keys — is announced inside the OpenAPI
+  info.description with a migration paragraph, which means a consumer only learns about it by
+  re-reading the spec. What the provider does publish in place of a status page is a live,
+  unauthenticated per-jurisdiction health endpoint, GET /v1/sources, which the RFC 9727
+  api-catalog names under the "status" relation.
+versioning:
+  scheme: uri-path
+  current_version: v1
+  spec_version: 1.0.0
+  header_version: null
+  policy_url: null
+  note: >-
+    No published version-support window and no version negotiation header. Additive change is
+    the stated default — "Criminal records land later as an additive recordType — the contract
+    does not change" (info.description).
+status_page:
+  present: false
+  url: null
+  probed:
+    - url: https://offendersearch.app/status
+      status: 404
+    - url: https://status.offendersearch.app
+      status: 000
+      note: DNS does not resolve.
+  substitute:
+    url: https://api.offendersearch.app/v1/sources
+    status: 200
+    auth_required: false
+    description: >-
+      Per-jurisdiction coverage catalog and live source health (status, health.lastSuccessAt,
+      health.ageSeconds) for all 58 registries. Declared as the "status" link relation in the
+      RFC 9727 api-catalog. This is registry-source health, not API-platform uptime — it does
+      NOT report whether api.offendersearch.app itself is up, and there is no incident history,
+      no subscribe-to-updates channel and no SLA.
+sla:
+  published: false
+  note: >-
+    No uptime or latency SLA is published. The API does publish per-request latency control
+    instead — deadlineMs with onDeadline=partial|error — and elapsedMs on every response.
+deprecation_policy:
+  published: false
+  sunset_header: false
+  deprecation_header: false
+  rfc8594: false
+  note: >-
+    No deprecation policy, no notice window, and no Sunset/Deprecation response headers are
+    documented. Removals have happened without one: counts.sourcesStale,
+    counts.sourcesDegraded, counts.sourcesOmitted, counts.recordsFromStaleSources,
+    freshnessDetail and sourceStatus[].freshnessSatisfied/.degraded/.omitted/.ageSeconds/
+    .lastSuccessAt were removed as of 2026-08-04.
+deprecated_elements:
+  - element: onStale
+    kind: request field
+    status: deprecated-but-accepted
+    replacement: null
+    source: openapi info.description
+    note: '"onStale is deprecated but still accepted, so an older request body keeps working."'
+  - element: dobVerification
+    kind: response field
+    status: superseded-but-retained
+    replacement: matchState
+    source: https://offendersearch.app/docs/date-of-birth.md
+    note: 'Described as "the same signal, backward-compatible" — matchState is the current field.'
+  - element: counts.sourcesStale
+    kind: response field
+    status: removed
+    removed_on: '2026-08-04'
+    replacement: counts.sourcesIncomplete
+  - element: counts.sourcesDegraded
+    kind: response field
+    status: removed
+    removed_on: '2026-08-04'
+    replacement: counts.sourcesIncomplete
+  - element: counts.sourcesOmitted
+    kind: response field
+    status: removed
+    removed_on: '2026-08-04'
+    replacement: counts.sourcesIncomplete
+  - element: counts.recordsFromStaleSources
+    kind: response field
+    status: removed
+    removed_on: '2026-08-04'
+    replacement: null
+  - element: freshnessDetail
+    kind: response object
+    status: removed
+    removed_on: '2026-08-04'
+    replacement: null
+  - element: sourceStatus[].freshnessSatisfied / .degraded / .omitted / .ageSeconds / .lastSuccessAt
+    kind: response fields
+    status: removed
+    removed_on: '2026-08-04'
+    replacement: sourceStatus[].incomplete / .incompleteReason
+deprecated_operations: []
+compatibility_surface:
+  - operation: compatSexoffenderPost
+    path: POST /v1/compat/sexoffender
+    purpose: offenders.io drop-in compatibility — legacy parameter names and paged envelope preserved.
+  - operation: compatSexoffenderGet
+    path: GET /v1/compat/sexoffender
+    purpose: offenders.io drop-in compatibility (GET form, accepts a key query parameter).
+compatibility_docs: https://offendersearch.app/docs/migration.md
+maturity:
+  api: generally available
+  mcp_server: private beta (hosted endpoint not open to self-serve signup)
+  team_management: not available (accounts are single-owner; invite/remove return 400)
+support:
+  email: support@offendersearch.app
+  endpoint: POST /v1/support

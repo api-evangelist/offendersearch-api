@@ -1,0 +1,52 @@
+# Offendersearch
+
+> Offendersearch is a REST API over US sex-offender registry data — all 50 states,
+> the District of Columbia, the US territories and NSOPW, normalized into one
+> record schema. One authenticated call searches every jurisdiction and returns
+> scored, de-duplicated records, each carrying per-source provenance and its own
+> lastCheckedAt. Every response reports which sources completed, so an incomplete
+> search is labelled rather than returned as an empty result.
+
+Not a consumer report and not a consumer reporting agency; results must not be the
+sole basis for an FCRA-governed decision. Metered pricing, $0.15 per call.
+
+## Documentation
+
+- [/docs.md](https://offendersearch.app/docs.md): the complete API reference as one markdown document.
+- [/docs/quickstart.md](https://offendersearch.app/docs/quickstart.md): Your first authenticated search in three languages, and the four fields to read off every response.
+- [/docs/authentication.md](https://offendersearch.app/docs/authentication.md): The X-API-Key header, key lifecycle and rotation, and the security posture behind the API.
+- [/docs/errors.md](https://offendersearch.app/docs/errors.md): Every status code, the stable error envelope, the rate-limit headers, and how to back off.
+- [/docs/search.md](https://offendersearch.app/docs/search.md): The primary endpoint. Every parameter, the four stages of a search, and nine worked query shapes.
+- [/docs/matching.md](https://offendersearch.app/docs/matching.md): Match modes, the closed strategy vocabulary, confidence ceilings, and partial-name search.
+- [/docs/date-of-birth.md](https://offendersearch.app/docs/date-of-birth.md): Labelled match strength on every record, and how dob, birthYear and dobPrecision fit together.
+- [/docs/result-completeness.md](https://offendersearch.app/docs/result-completeness.md): An incomplete search is labelled, never silently empty. counts, sourceStatus and incompleteReason.
+- [/docs/pagination.md](https://offendersearch.app/docs/pagination.md): The full result set in one response by default — plus page, perPage and totalPages when you want slices.
+- [/docs/freshness.md](https://offendersearch.app/docs/freshness.md): Per-request freshness tiers, per-record lastCheckedAt, and the live coverage catalog.
+- [/docs/jurisdictions.md](https://offendersearch.app/docs/jurisdictions.md): Every jurisdiction code, and the difference between scoping a search and filtering a result.
+- [/docs/async-and-webhooks.md](https://offendersearch.app/docs/async-and-webhooks.md): Submit and collect, with no request-timeout ceiling. Signed webhooks and idempotent retries.
+- [/docs/batch.md](https://offendersearch.app/docs/batch.md): Up to 1000 lookups per call, JSON or CSV, row in and row out, with per-row fault isolation.
+- [/docs/record-object.md](https://offendersearch.app/docs/record-object.md): One normalized 76-field schema across every jurisdiction, and how to read its empty values.
+- [/docs/reports.md](https://offendersearch.app/docs/reports.md): A timestamped PDF of a search you already ran, with a source citation on every record.
+- [/docs/migration.md](https://offendersearch.app/docs/migration.md): A drop-in compatibility endpoint, the full legacy parameter map, and what /v1/search adds.
+
+## Machine-readable definitions
+
+- [/openapi.yaml](https://offendersearch.app/openapi.yaml): OpenAPI 3.1 definition of the v1.0.0 API (YAML).
+- [/openapi.json](https://offendersearch.app/openapi.json): OpenAPI 3.1 definition of the v1.0.0 API (JSON).
+- [/.well-known/api-catalog](https://offendersearch.app/.well-known/api-catalog): RFC 9727 linkset naming every API this origin publishes.
+
+## Product and coverage
+
+- [/coverage](https://offendersearch.app/coverage): Every jurisdiction covered, and what one nationwide call returns.
+- [/registered-offender-database](https://offendersearch.app/registered-offender-database): What is in the dataset: schema, cohorts, freshness.
+- [/pricing](https://offendersearch.app/pricing): Per-call pricing, volume tiers and surcharges.
+- [/mcp-server](https://offendersearch.app/mcp-server): Model Context Protocol server for agent clients.
+- [/ai-integration](https://offendersearch.app/ai-integration): Tool-call definitions for integrating the API into an LLM agent.
+
+## Accountability
+
+- [/about](https://offendersearch.app/about): The entity behind the API and how to reach a person (support@offendersearch.app).
+- [/methodology](https://offendersearch.app/methodology): Provenance, refresh cadence, how match strength is labelled, corrections.
+- [/trust](https://offendersearch.app/trust): Security and compliance posture.
+- [/terms](https://offendersearch.app/terms): Terms of service, acceptable use and FCRA limits.
+- [/privacy](https://offendersearch.app/privacy): What is collected, how it is used and retained, and how to exercise rights.

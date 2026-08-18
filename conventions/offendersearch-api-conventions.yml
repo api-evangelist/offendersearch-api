@@ -1,0 +1,146 @@
+generated: '2026-08-18'
+method: searched
+source: >-
+  https://offendersearch.app/docs.md — the cross-cutting request/response semantics that
+  apply across every Offendersearch endpoint, read from the provider's own markdown
+  documentation set and cross-checked against openapi/offendersearch-api-openapi.yml.
+description: >-
+  How the Offendersearch REST API behaves across operations: authentication style,
+  idempotency on the asynchronous endpoint, offset pagination, the completeness contract
+  (a 200 can be partial), freshness selection per request, the stable error envelope,
+  rate-limit signaling, and versioning.
+base_url: https://api.offendersearch.app
+api_style: REST over HTTPS, JSON request bodies, JSON responses (PDF for verification reports)
+
+authentication:
+  scheme: API key in the X-API-Key request header
+  alternatives:
+    - 'Authorization: Bearer <session token> — accepted by POST /v1/search and the compat endpoint'
+    - "'?key=<key>' query parameter — offenders.io compatibility endpoint only (demo parity)"
+    - X-Admin-Key — separate internal admin credential, not part of the public API
+  key_format_prefix: os_live_
+  key_storage: Secret shown in full once at creation; stored only as a one-way hash
+  scopes: >-
+    None. A key is a pure authentication credential — there are no per-key feature scopes.
+    Freshness is chosen per request and verification reports are a separate endpoint any
+    valid key may call.
+  rotation: Issue a second key, deploy it, revoke the first; both are valid at once, no downtime window
+  docs: https://offendersearch.app/docs/authentication.md
+  detail: authentication/offendersearch-api-authentication.yml
+
+idempotency:
+  supported: true
+  mechanism: Idempotency-Key request header
+  applies_to: POST /v1/searches (asynchronous search)
+  key_format: Any unique client-generated string (a UUID or an order id)
+  conflict_behavior: >-
+    A repeated key returns the ORIGINAL job rather than creating — or billing — a second
+    search. Reuse the same key when retrying the same logical request; use a fresh key for a
+    genuinely new search.
+  retention: >-
+    "Keys are scoped to your account and retained long enough to cover normal retry windows."
+    No numeric retention window is published.
+  docs: https://offendersearch.app/docs/async-and-webhooks.md
+  note: >-
+    Idempotency is documented for the asynchronous endpoint only. The synchronous POST
+    /v1/search and POST /v1/batch do not document an Idempotency-Key header.
+
+pagination:
+  style: offset (page / perPage)
+  default_behavior: >-
+    POST /v1/search returns the full de-duplicated result set in ONE response unless you
+    paginate. Set neither page nor perPage and you get everything; perPage comes back equal
+    to counts.records and totalPages is 1.
+  request_params:
+    query.page: 'Default 1; must be >= 1 (0 returns 422). A page past the end clamps to the last page.'
+    query.perPage: 'Default 20 when paginating; must be >= 1.'
+  response_fields:
+    page: The page returned.
+    perPage: Page size in effect.
+    totalPages: Total pages available.
+    counts.records: Total matched BEFORE the page slice — not records.length.
+    counts.recordsReturned: Records in this response.
+    capped: 'true when the 4,000-record unpaginated cap applied.'
+  ordering: Results are totally and stably ordered, so paging never reshuffles.
+  compat_endpoint: 'Legacy paged envelope — 20 per page, 50 for a GIS (lat+lng) search.'
+  docs: https://offendersearch.app/docs/pagination.md
+
+completeness_contract:
+  principle: >-
+    An incomplete search is LABELLED, never silently returned as an empty result. This is the
+    single most important runtime semantic in the API: a 0 from a source that did not finish
+    means UNKNOWN, not NO MATCH.
+  response_fields:
+    status: complete | partial
+    counts.sourcesQueried: Jurisdictions the search touched.
+    counts.sourcesComplete: Jurisdictions that finished.
+    counts.sourcesIncomplete: 'Jurisdictions that did not finish — the signal to gate on.'
+    sourceStatus[]: Per-jurisdiction status on every response.
+    sourceStatus[].incompleteReason: Closed enum saying whether an identical retry can change the answer.
+  http_note: 'A 200 can carry status: partial when a deadlineMs bound was set; 504 only when onDeadline = "error".'
+  docs: https://offendersearch.app/docs/result-completeness.md
+
+freshness:
+  model: per-request parameter, not a key setting and not a tier
+  values:
+    daily: 'DEFAULT. The freshest snapshot of each registry. Bills +$0.01 per call.'
+    weekly: 'Same corpus a step behind; no surcharge. Right for bulk and periodic re-screens.'
+  semantics: >-
+    freshness describes the answer, it does not filter it. No registry is withheld from a
+    result because of when it was last swept; status never becomes partial for snapshot age.
+  per_record: 'record.source.scrapedAt / lastCheckedAt on every record.'
+  per_registry: 'GET /v1/sources publishes health.lastSuccessAt and health.ageSeconds live, without an API key.'
+  docs: https://offendersearch.app/docs/freshness.md
+
+error_envelope:
+  shape: '{"error": {"code": "<stable_slug>", "message": "<human sentence>"}}'
+  stability: Identical on every endpoint, so one error handler covers the whole API.
+  switch_on: error.code
+  user_safe: 'error.message on a 422 is written to be shown to an end user verbatim.'
+  format: 'Proprietary JSON envelope — NOT RFC 9457 application/problem+json.'
+  divergence: >-
+    DOCS AND SPEC DISAGREE. The documentation (docs/errors.md) publishes
+    {"error":{"code","message"}} as the envelope on every endpoint, but the OpenAPI
+    components.schemas.Error is a FastAPI-shaped {"detail": string}, and the compat endpoint
+    declares a third shape, CompatError {"code": int, "message": string}. Only the 429
+    schema (RateLimitError) carries a structured detail.code enum. A client cannot satisfy
+    both documents with one parser; this is a contract defect to raise with the provider.
+  detail: errors/offendersearch-api-problem-types.yml
+  docs: https://offendersearch.app/docs/errors.md
+
+rate_limit_signaling:
+  headers: [X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After]
+  status_on_exhaustion: 429
+  scope: per API key
+  detail: rate-limits/offendersearch-api-rate-limits.yml
+
+webhooks:
+  supported: true
+  mechanism: 'webhookUrl on POST /v1/searches; the completed SearchResponse is POSTed to it.'
+  event: search.completed
+  signature_header: X-Offendersearch-Signature
+  signature_algorithm: 'HMAC-SHA256 of the RAW request body using the account signing secret'
+  delivery: 'At-least-once; de-duplicate on searchId. Non-2xx is retried with exponential backoff.'
+  detail: asyncapi/offendersearch-api-webhooks.yml
+
+versioning:
+  scheme: URI path prefix
+  current: v1
+  spec_version: 1.0.0
+  breaking_change_policy: >-
+    No published deprecation-window policy. The one breaking change on record (2026-08-04,
+    ISO-8601 dates and removed counts.* keys) was announced inside the OpenAPI
+    info.description with a migration paragraph rather than through a dated changelog.
+  detail: lifecycle/offendersearch-api-lifecycle.yml
+
+request_tracing:
+  request_id_header: null
+  note: >-
+    No request-id or correlation header is documented. Responses carry elapsedMs, and an async
+    job carries searchId; a verification report returns X-Report-Id. The edge (Google Frontend)
+    returns x-cloud-trace-context, which is infrastructure, not a documented API contract.
+
+media_types:
+  request: application/json (POST /v1/batch also accepts text/csv)
+  response: application/json (application/pdf for POST /v1/report and GET /v1/proof-docs/{token})
+  compression: gzip applied above 1 KB

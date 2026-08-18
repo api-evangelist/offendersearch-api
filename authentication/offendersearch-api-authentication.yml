@@ -1,0 +1,39 @@
+generated: '2026-08-18'
+method: derived
+source: openapi/offendersearch-api-openapi.yml
+summary:
+  types:
+  - apiKey
+  - http
+  api_key_in:
+  - header
+  - query
+schemes:
+- name: ApiKeyAuth
+  type: apiKey
+  in: header
+  parameter: X-API-Key
+  description: Customer API key. Primary auth for search/records/compat/proof.
+  sources:
+  - openapi/offendersearch-api-openapi.yml
+- name: BearerAuth
+  type: http
+  scheme: bearer
+  description: Signed session token (HMAC-SHA256). Auth for account/dashboard endpoints; also
+    accepted by POST /v1/search and the compat endpoint.
+  sources:
+  - openapi/offendersearch-api-openapi.yml
+- name: QueryKeyAuth
+  type: apiKey
+  in: query
+  parameter: key
+  description: API key passed as `?key=` — offenders.io demo mode (compat endpoint only).
+  sources:
+  - openapi/offendersearch-api-openapi.yml
+- name: AdminAuth
+  type: apiKey
+  in: header
+  parameter: X-Admin-Key
+  description: Internal admin credential — separate from customer API keys.
+  sources:
+  - openapi/offendersearch-api-openapi.yml

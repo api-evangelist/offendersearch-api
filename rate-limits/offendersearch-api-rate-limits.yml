@@ -1,0 +1,59 @@
+specification: API Commons Rate Limits
+specificationVersion: '0.1'
+provider: Offendersearch
+providerId: offendersearch-api
+generated: '2026-08-18'
+created: '2026-08-18'
+modified: '2026-08-18'
+method: searched
+source: https://offendersearch.app/docs/errors.md
+sources:
+  - https://offendersearch.app/docs/errors.md
+  - https://offendersearch.app/docs/pagination.md
+  - https://offendersearch.app/openapi.json
+description: >-
+  Requests are rate limited per API key. The documentation publishes the runtime signal —
+  X-RateLimit-Limit / X-RateLimit-Remaining / X-RateLimit-Reset on every response and
+  Retry-After on a 429 — but does NOT publish the numeric ceiling: sustained rate,
+  concurrency and monthly volume are described as "set by your plan" and are not stated
+  anywhere public. Because pricing is purely metered with no tiers, there is no published
+  per-tier limit table to read. Guidance for large jobs is to use the asynchronous endpoint
+  or batch rather than issuing thousands of synchronous calls, and to back off exponentially
+  respecting Retry-After.
+limit_count: 0
+limits: []
+headers:
+  X-RateLimit-Limit: Requests allowed in the current window.
+  X-RateLimit-Remaining: Requests left in the current window.
+  X-RateLimit-Reset: Unix time when the window resets.
+  Retry-After: On a 429, seconds to wait before retrying.
+responseCodes:
+  throttled: 429
+scope: per API key
+observed:
+  probed_url: https://api.offendersearch.app/v1/sources
+  probed_status: 200
+  probed_at: '2026-08-18'
+  note: >-
+    The one unauthenticated endpoint (GET /v1/sources, the coverage catalog) returned no
+    X-RateLimit-* headers, so the documented headers could not be confirmed on an anonymous
+    call; confirming them requires an authenticated request with a billed key.
+other_ceilings:
+  - name: Batch rows per call
+    limit: 1000
+    scope: per POST /v1/batch request
+    source: https://offendersearch.app/docs/batch.md
+    on_exceeded: 413
+  - name: Unpaginated response record cap
+    limit: 4000
+    scope: per POST /v1/search response
+    source: https://offendersearch.app/docs/pagination.md
+    note: Sets capped=true when it applies; send perPage to reach every matched record.
+  - name: Support message submissions
+    limit: null
+    scope: POST /v1/support
+    source: openapi/offendersearch-api-openapi.yml
+    note: Declares a 429 response; the numeric limit is not published.
+retry_guidance: >-
+  Exponential backoff that respects Retry-After. On POST /v1/searches send an
+  Idempotency-Key so a retry never starts — or bills — a second search.

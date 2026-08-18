@@ -1,0 +1,63 @@
+generated: '2026-08-18'
+method: derived
+source: >-
+  openapi/offendersearch-api-openapi.yml — info.description. There is no dated changelog page:
+  https://offendersearch.app/changelog returned 404 and https://offendersearch.app/docs/changelog.md
+  returned 404 on 2026-08-18, and no releases/what's-new section appears in the sitemap. The one
+  entry below is the breaking change the provider announces inside the OpenAPI description.
+description: >-
+  Offendersearch publishes no changelog. Version history is communicated only inside the
+  OpenAPI info.description, which carries one dated, explicitly-labelled breaking change and a
+  migration paragraph. A consumer has no feed, no page and no dated list to watch; the only way
+  to learn a field was removed is to re-read the spec.
+scheme: none-published
+current_version: 1.0.0
+changelog_url: null
+feed_url: null
+probed:
+  - url: https://offendersearch.app/changelog
+    status: 404
+  - url: https://offendersearch.app/docs/changelog.md
+    status: 404
+entries:
+  - date: '2026-08-04'
+    version: null
+    breaking: true
+    title: Every date is ISO-8601
+    highlights:
+      - >-
+        Every date-shaped field in a record now returns ISO-8601 — dob, the four offense.*Date
+        fields and the five stateData date fields. They previously passed the registry's own
+        string through byte-for-byte, so one response could carry "2003-03-31", "10/11/1988",
+        "11-29-1987" and "Aug. 10, 1987" in the same key; offense.offenseDate was ISO on only
+        45.4% of its populated values, in seven distinct shapes.
+      - >-
+        A partial date stays partial — YYYY-MM or YYYY — and a companion datePrecision object
+        on offense and stateData names the precision. A day is never invented.
+      - >-
+        Nothing is discarded: an unparseable value (a crime description in an offence-date
+        cell, a registrationEnds of "Life") returns "" with precision "unparseable", and the
+        registry's literal text is preserved in datesAsPublished beside it.
+    removals:
+      - counts.sourcesStale
+      - counts.sourcesDegraded
+      - counts.sourcesOmitted
+      - counts.recordsFromStaleSources
+      - freshnessDetail
+      - sourceStatus[].freshnessSatisfied
+      - sourceStatus[].degraded
+      - sourceStatus[].omitted
+      - sourceStatus[].ageSeconds
+      - sourceStatus[].lastSuccessAt
+    deprecations:
+      - 'onStale — deprecated but still accepted, so an older request body keeps working.'
+    migration: >-
+      Gate on counts.sourcesIncomplete instead of any removed key — it asks whether your ANSWER
+      is whole, which is the question those keys were being used to ask. If you wrote a lenient
+      date parser or a per-state format table you can delete it; string comparisons against
+      these values change once.
+    source: openapi/offendersearch-api-openapi.yml#/info/description
+announced_but_undated:
+  - >-
+    Criminal records are stated as landing later as an additive recordType, with no contract
+    change and no date given.

@@ -1,0 +1,21 @@
+generated: '2026-08-18'
+method: probed
+source: live DNS/TLS/HTTP probes of apis.yml + OpenAPI hosts
+hosts:
+- host: offendersearch.app
+  https: true
+  tls_version: TLSv1.3
+  cert_expires: Oct 27 13:39:50 2026 GMT
+  hsts: false
+- host: api.offendersearch.app
+  https: true
+  tls_version: TLSv1.3
+  cert_expires: Oct 27 13:39:03 2026 GMT
+  hsts: null
+domains:
+- domain: offendersearch.app
+  dnssec: false
+  caa: []
+  spf: true
+  dmarc: true
+  dmarc_policy: none

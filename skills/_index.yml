@@ -1,0 +1,32 @@
+generated: '2026-08-18'
+method: generated
+source: >-
+  Authored by API Evangelist from the provider's own documentation
+  (https://offendersearch.app/docs.md and its per-topic markdown pages), with every operationId
+  verified against openapi/offendersearch-api-openapi.yml. The provider publishes no skills of
+  its own — /AGENTS.md, /agents.md and /skills all returned 404 on 2026-08-18.
+api: Offendersearch API
+base_url: https://api.offendersearch.app
+skills:
+  - name: offendersearch-nationwide-search
+    file: offendersearch-api-nationwide-search.md
+    description: One authenticated nationwide search, read correctly — including the completeness contract.
+    operations: [syncSearch]
+  - name: offendersearch-bulk-screening
+    file: offendersearch-api-bulk-screening.md
+    description: Roster screening at volume via batch or async submit-and-collect, with signed webhooks and idempotent retries.
+    operations: [batchSearch, asyncSearch, getSearch]
+  - name: offendersearch-verification-report
+    file: offendersearch-api-verification-report.md
+    description: A timestamped, source-cited PDF of a search already run, for an audit file.
+    operations: [syncSearch, makeReport, getProofDoc]
+  - name: offendersearch-coverage-check
+    file: offendersearch-api-coverage-check.md
+    description: The free, unauthenticated jurisdiction coverage catalog and live per-registry health.
+    operations: [listSources]
+cross_cutting_rules:
+  - Gate on counts.sourcesIncomplete; an unfinished source returning 0 means UNKNOWN, not NO MATCH.
+  - Send Idempotency-Key on POST /v1/searches so a retry never starts or bills a second search.
+  - Verify X-Offendersearch-Signature over the raw body before trusting a webhook; de-duplicate on searchId.
+  - 'Not a consumer reporting agency: results must not be the sole basis for an FCRA-governed decision.'
+  - Some jurisdictions restrict commercial use of this data; check legal.commercialUse on GET /v1/sources.

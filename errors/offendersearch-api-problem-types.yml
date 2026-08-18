@@ -1,0 +1,139 @@
+generated: '2026-08-18'
+method: searched
+source: >-
+  https://offendersearch.app/docs/errors.md (status-code table and error envelope), enriched
+  with the 4xx/5xx responses and error schemas derived from
+  openapi/offendersearch-api-openapi.yml.
+format: proprietary-json
+media_type: application/json
+description: >-
+  Offendersearch does not use RFC 9457 application/problem+json. The published documentation
+  describes one stable envelope — {"error": {"code", "message"}} — with an error.code slug you
+  switch on and an error.message written to be shown to an end user. The OpenAPI, however,
+  models errors as a FastAPI-shaped {"detail": string} (components.schemas.Error), with two
+  further shapes: RateLimitError, whose detail object carries a code enum and
+  retryAfterSeconds, and CompatError ({"code": <int>, "message"}) returned only by the
+  offenders.io compatibility endpoint. The three shapes are recorded below as published;
+  reconciling them is a provider-side contract defect, not something this catalog resolves.
+envelopes:
+  - id: documented
+    shape: '{"error": {"code": "<slug>", "message": "<human sentence>"}}'
+    source: https://offendersearch.app/docs/errors.md
+    applies_to: 'Documented as identical on every endpoint.'
+  - id: spec-default
+    shape: '{"detail": "<human message>"}'
+    source: openapi/offendersearch-api-openapi.yml#/components/schemas/Error
+    applies_to: Every operation except the 429 on /v1/support and the compat endpoint.
+  - id: spec-rate-limit
+    shape: '{"detail": {"code": "rate_limited|overloaded", "message": "...", "retryAfterSeconds": <int>}}'
+    source: openapi/offendersearch-api-openapi.yml#/components/schemas/RateLimitError
+    applies_to: 429 responses. detail.retryAfterSeconds always equals the Retry-After header.
+  - id: spec-compat
+    shape: '{"code": <int>, "message": "<human message>"}'
+    source: openapi/offendersearch-api-openapi.yml#/components/schemas/CompatError
+    applies_to: GET/POST /v1/compat/sexoffender only (offenders.io drop-in parity).
+status_codes:
+  - status: 200
+    title: OK
+    detail: >-
+      Search completed — OR returned PARTIAL results under a deadlineMs bound. A 200 is not a
+      guarantee of completeness; read status and counts.sourcesIncomplete, never records alone.
+  - status: 202
+    title: Accepted
+    detail: Asynchronous search accepted; poll resultsUrl or await the webhook.
+  - status: 400
+    title: Bad Request
+    detail: Invalid or missing parameters (e.g. no lastName and no q/location).
+    operations: [compatSexoffenderGet, compatSexoffenderPost, signup, inviteMember, removeMember]
+  - status: 401
+    title: Unauthorized
+    detail: Missing or invalid X-API-Key header, or a request outside the key's scope.
+    remediation: Send a valid key in X-API-Key; secrets are shown once at creation, so rotate if lost.
+  - status: 402
+    title: Payment Required
+    detail: >-
+      Billing is not enabled on the account. Required for all accounts, including verification
+      reports and proof documents.
+    remediation: Add a credit card or ACH payment method; the key stays disabled until one is on file.
+    operations: [syncSearch, makeProof]
+  - status: 404
+    title: Not Found
+    detail: The search id, record id or key id does not exist.
+    operations: [getSearch, makeProof, getProofDoc, getRecord, rotateKey, deleteKey]
+  - status: 409
+    title: Conflict — ambiguous identifier
+    detail: >-
+      The identifier matches records in more than one jurisdiction; detail names them.
+      Disambiguate with the compat endpoint's state, or use recordId.
+    operations: [getRecord]
+  - status: 413
+    title: Payload Too Large
+    detail: >-
+      Batch exceeded the maximum row count (1000), or a support message body exceeded 64 KB.
+    operations: [batchSearch, submitSupportMessage]
+  - status: 422
+    title: Unprocessable Entity — the request was understood and DECLINED
+    detail: >-
+      Two causes. (a) The query cannot be answered COMPLETELY, so it is declined rather than
+      answered with a subset that would read as the whole answer: send at least one of
+      lastName, dob, age, city, zipcode, a lat/lng radius, or q. A firstName alone is not
+      enough. A name + DOB query is NEVER refused. (b) A parameter is malformed or
+      unrecognised — an unknown jurisdiction code, or a filter placed at the top level of the
+      body instead of inside query.
+    remediation: The message is written to be shown to a user verbatim. Narrow the query and resend.
+    example_code: unprocessable_query
+  - status: 429
+    title: Too Many Requests
+    detail: Rate limit or plan quota exceeded.
+    remediation: >-
+      Back off exponentially, honouring Retry-After (seconds) or the equivalent
+      detail.retryAfterSeconds. Codes: rate_limited (per-caller quota, clears by itself) and
+      overloaded (service at capacity).
+    operations: [submitSupportMessage]
+  - status: 503
+    title: Service Unavailable
+    detail: >-
+      A support message could not be recorded — do NOT treat it as sent. Use the address in
+      the error text instead.
+    operations: [submitSupportMessage]
+  - status: 504
+    title: Deadline Exceeded
+    detail: Returned only when the deadline is hit and onDeadline = "error" (forced partial).
+    operations: [syncSearch]
+error_codes:
+  - code: invalid_request
+    status: 400
+    message_example: 'query requires at least one of lastName, q, or a lat/lng radius.'
+    source: https://offendersearch.app/docs/errors.md
+  - code: unauthorized
+    status: 401
+    message_example: 'Missing or invalid X-API-Key header.'
+    source: https://offendersearch.app/docs/authentication.md
+  - code: unprocessable_query
+    status: 422
+    message_example: 'A firstName on its own cannot be answered completely. Pair it with a lastName, a dob, or an age.'
+    source: https://offendersearch.app/docs/errors.md
+  - code: rate_limited
+    status: 429
+    message_example: null
+    detail: Per-caller quota; clears by itself. Wait detail.retryAfterSeconds.
+    source: openapi/offendersearch-api-openapi.yml#/components/schemas/RateLimitError
+  - code: overloaded
+    status: 429
+    message_example: null
+    detail: The service is at capacity.
+    source: openapi/offendersearch-api-openapi.yml#/components/schemas/RateLimitError
+non_error_failure_signals:
+  note: >-
+    The most consequential failure in this API is NOT an HTTP error. A 200 can carry
+    status "partial", and a 0 from a jurisdiction that did not finish means UNKNOWN, not
+    NO MATCH. Gate on counts.sourcesIncomplete and sourceStatus[].incompleteReason (a closed
+    enum that says whether an identical retry can change the answer), not on the status code.
+  fields:
+    - status
+    - counts.sourcesQueried
+    - counts.sourcesComplete
+    - counts.sourcesIncomplete
+    - sourceStatus[].incomplete
+    - sourceStatus[].incompleteReason
+  docs: https://offendersearch.app/docs/result-completeness.md

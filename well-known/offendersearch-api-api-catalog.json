@@ -1,0 +1,57 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://api.offendersearch.app",
+      "service-desc": [
+        {
+          "href": "https://offendersearch.app/openapi.json",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Offendersearch API — OpenAPI definition (JSON)"
+        },
+        {
+          "href": "https://offendersearch.app/openapi.yaml",
+          "type": "application/vnd.oai.openapi;version=3.1",
+          "title": "Offendersearch API — OpenAPI definition (YAML)"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://offendersearch.app/docs",
+          "type": "text/html",
+          "title": "Offendersearch API — documentation"
+        },
+        {
+          "href": "https://offendersearch.app/docs.md",
+          "type": "text/markdown",
+          "title": "Offendersearch API — documentation (Markdown)"
+        }
+      ],
+      "service-meta": [
+        {
+          "href": "https://offendersearch.app/coverage",
+          "type": "text/html",
+          "title": "Jurisdiction coverage"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://api.offendersearch.app/v1/sources",
+          "type": "application/json",
+          "title": "Per-jurisdiction source health"
+        }
+      ],
+      "terms-of-service": [
+        {
+          "href": "https://offendersearch.app/terms",
+          "type": "text/html",
+          "title": "Terms of service"
+        }
+      ],
+      "author": [
+        {
+          "href": "https://offendersearch.app/"
+        }
+      ]
+    }
+  ]
+}

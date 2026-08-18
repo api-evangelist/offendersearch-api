@@ -1,0 +1,132 @@
+generated: '2026-08-18'
+method: derived
+source: >-
+  https://offendersearch.app/mcp-server (the three published MCP tool names and descriptions)
+  and https://offendersearch.app/ai-integration (the published LLM tool definition), bound by
+  name and semantics to operationIds in openapi/offendersearch-api-openapi.yml.
+description: >-
+  Binds each agent-facing tool Offendersearch publishes to the REST operation that backs it.
+  Confidence is capped at medium for every row: the MCP endpoint does not resolve, so no
+  tools/list introspection was possible and no tool inputSchema is published — the mapping is
+  by name, description and billing semantics only. Where the mapping IS confirmed by the
+  provider's own words (get_registry_coverage described as "the public catalog of every
+  registry we cover, with its scope, legal status and health — no API key required", which is
+  exactly GET /v1/sources) it is marked high.
+surfaces:
+  openapi:
+    path: openapi/offendersearch-api-openapi.yml
+    source: https://offendersearch.app/openapi.json
+    operations: 36
+    gated: false
+  mcp:
+    url: https://mcp.offendersearch.app
+    gated: true
+    gate: DNS does not resolve; private beta, request-access only.
+  graphql:
+    endpoint: null
+  llm_tool_definition:
+    url: https://offendersearch.app/ai-integration
+    gated: false
+crosswalk:
+  - tool: search_offenders
+    surface: mcp
+    category: search
+    rest: [syncSearch]
+    binding: 1:1
+    confidence: medium
+    note: >-
+      "A name, DOB, location or radius search over nationwide coverage" and "returns the same
+      normalized, provenance-tagged records as the REST API" — that is POST /v1/search. Whether
+      the tool also fronts the async asyncSearch/getSearch pair for long jobs is not stated.
+  - tool: batch_search
+    surface: mcp
+    category: search
+    rest: [batchSearch]
+    binding: 1:1
+    confidence: medium
+    note: >-
+      "Up to 1,000 queries in one call, one row in and one row out" matches POST /v1/batch
+      exactly, including the 1000-row 413 ceiling and per-row billing.
+  - tool: get_registry_coverage
+    surface: mcp
+    category: metadata
+    rest: [listSources]
+    binding: 1:1
+    confidence: high
+    note: >-
+      "The public catalog of every registry we cover, with its scope, legal status and health —
+      no API key required" is GET /v1/sources, the one anonymous operation in the spec
+      (security: []). Free in both surfaces.
+  - tool: search_sex_offender_registry
+    surface: llm_tool_definition
+    category: search
+    rest: [syncSearch]
+    binding: 1:1
+    confidence: high
+    note: >-
+      The provider states plainly: "The handler calls POST /v1/search". Published input_schema
+      exposes only firstName, lastName, dob and state, with lastName required — a deliberate
+      subset of the full Query schema.
+mcp_only: []
+rest_only:
+  - operation: asyncSearch
+    reason: No published tool submits an asynchronous search or supplies a webhookUrl.
+  - operation: getSearch
+    reason: No published tool collects an async job by searchId.
+  - operation: makeReport
+    reason: No tool generates the consolidated verification-report PDF; a binary PDF is an awkward MCP return.
+  - operation: makeProof
+    reason: Internal proof-document add-on; not exposed as a tool.
+  - operation: getProofDoc
+    reason: Document fetch by token; not exposed as a tool.
+  - operation: getRecord
+    reason: No tool fetches a single normalized record by recordId.
+  - operation: submitSupportMessage
+    reason: Support channel, not a data operation.
+  - operation: compatSexoffenderPost
+    reason: Legacy offenders.io drop-in shape; no reason to expose it to an agent.
+  - operation: compatSexoffenderGet
+    reason: Legacy offenders.io drop-in shape; no reason to expose it to an agent.
+  - operation: signup
+    reason: Account provisioning — session-token surface, out of scope for a data tool.
+  - operation: login
+    reason: Account provisioning — session-token surface, out of scope for a data tool.
+  - operation: getAccount
+    reason: Dashboard/session operation.
+  - operation: listKeys
+    reason: Credential management; deliberately not agent-reachable.
+  - operation: createKey
+    reason: Credential management; deliberately not agent-reachable.
+  - operation: rotateKey
+    reason: Credential management; deliberately not agent-reachable.
+  - operation: deleteKey
+    reason: Credential management; deliberately not agent-reachable.
+  - operation: getUsage
+    reason: Dashboard/session operation.
+  - operation: getTeam
+    reason: Dashboard/session operation.
+  - operation: inviteMember
+    reason: Not available (single-owner accounts).
+  - operation: removeMember
+    reason: Not available (single-owner accounts).
+  - operation: getBilling
+    reason: Dashboard/session operation.
+  - operation: admin/*
+    reason: >-
+      Twelve internal ops endpoints behind the separate X-Admin-Key credential
+      (/v1/admin/accounts, warm-queries, warm, cache-stats, scraper-health, scraper-runs,
+      /admin/ingest, /admin/ingest/rerun-failures, /admin/ingest/status, /admin/freshness,
+      /admin/ingest/report). Not part of the public API and not agent-reachable.
+coverage:
+  tools_published: 4
+  tools_mapped: 4
+  tools_unmapped: 0
+  rest_operations: 36
+  rest_operations_covered: 3
+  rest_operations_uncovered: 33
+  note: >-
+    Four published tools map onto three distinct REST operations (search_offenders and
+    search_sex_offender_registry both back onto syncSearch). Of the 33 uncovered operations, 12
+    are admin-key-only and 12 are account/session/dashboard operations, so the agent-relevant
+    gap is 9: the async pair (asyncSearch + getSearch), getRecord, makeReport, makeProof,
+    getProofDoc, submitSupportMessage and the two compat operations.
