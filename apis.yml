@@ -1,0 +1,66 @@
+name: Offendersearch API
+description: >-
+  REST API unifying US sex-offender registry data across all 50 states, DC, and US territories behind a single endpoint,
+  returning scored, de-duplicated, source-tagged records with freshness tiers and consolidated verification-report PDFs.
+url: https://offendersearch-api.apievangelist.com/apis.yml
+created: '2026-08-18'
+modified: '2026-08-18'
+specificationVersion: '0.21'
+tags:
+  - background-checks
+  - identity-verification
+  - public-records
+  - criminal-records
+  - compliance
+  - trust-and-safety
+  - hr-tech
+  - recruiting
+  - proptech
+  - tenant-screening
+  - healthcare-screening
+  - data-api
+  - mcp-server
+  - agent-native
+apis:
+  - name: Offendersearch API
+    description: >-
+      Nationwide sex-offender registry search API offering synchronous, asynchronous, and batch lookups, normalized
+      scored records, per-source provenance, freshness tiers, and consolidated verification-report PDFs.
+    humanURL: https://offendersearch.app/docs
+    baseURL: https://api.offendersearch.app
+    tags:
+      - background-checks
+      - identity-verification
+      - public-records
+      - criminal-records
+      - compliance
+      - trust-and-safety
+      - hr-tech
+      - recruiting
+      - proptech
+      - tenant-screening
+      - healthcare-screening
+      - data-api
+      - mcp-server
+      - agent-native
+    properties:
+      - type: OpenAPI
+        url: https://offendersearch.app/openapi.json
+      - type: OpenAPI
+        url: https://offendersearch.app/openapi.yaml
+      - type: Documentation
+        url: https://offendersearch.app/docs
+      - type: Documentation
+        url: https://offendersearch.app/docs.md
+      - type: Documentation
+        url: https://offendersearch.app/mcp-server
+      - type: Documentation
+        url: https://offendersearch.app/ai-integration
+maintainers:
+  - FN: Offendersearch, Inc.
+    url: https://offendersearch.app
+generated:
+  by: apis.io/add
+  model: claude-opus-4-8
+  confidence: 92
+  at: '2026-08-18T09:56:38.860Z'
