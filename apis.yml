@@ -18,7 +18,7 @@ image: https://offendersearch.app/opengraph-image.png
 url: https://offendersearch-api.apievangelist.com/apis.yml
 created: '2026-08-18'
 modified: '2026-08-18'
-specificationVersion: '0.21'
+specificationVersion: '0.23'
 tags:
 - background-checks
 - identity-verification
