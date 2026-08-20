@@ -20,6 +20,21 @@ created: '2026-08-18'
 modified: '2026-08-18'
 specificationVersion: '0.23'
 tags:
+- Background Checks
+- Identity Verification
+- Public Records
+- Criminal Records
+- Compliance
+- Trust and Safety
+- HR Tech
+- Recruiting
+- PropTech
+- Tenant Screening
+- healthcare-screening
+- Data API
+- MCP Server
+- agent-native
+tags_raw:
 - background-checks
 - identity-verification
 - public-records
@@ -97,6 +112,8 @@ apis:
   humanURL: https://offendersearch.app/docs
   baseURL: https://api.offendersearch.app
   tags:
+  - Authentication
+  tags_raw:
   - Auth
   properties:
   - type: OpenAPI
