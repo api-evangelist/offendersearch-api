@@ -1,0 +1,58 @@
+# Kin Score artifact — offendersearch-api — 2026-08-25T143147
+# The API Evangelist rating (https://github.com/api-evangelist/kin-score). Generated; do not edit.
+---
+kin_score:
+  slug: offendersearch-api
+  schema_version: 0.14.0
+  scored_at: '2026-08-25'
+  run_ts: 2026-08-25T143147
+  composite: 47.4
+  band: developing
+  facets:
+    discoverability: 92.6
+    contract_quality: 59.7
+    governance: 16.7
+    operational_transparency: 0.0
+    developer_ergonomics: 18.5
+    commercial_clarity: 73.7
+    contract_governance: 16.7
+    access_clarity: 73.7
+  agent_readiness:
+    score: 45.4
+    band: agent-native
+    dimensions:
+      spec_presence: true
+      agentic_access: derived
+      reversibility_documented: false
+      mcp_server: documented
+      auth_clarity: bearer
+      idempotency: documented
+      error_semantics: verified
+      openapi_examples: partial
+      rate_limit_signal: verified
+      event_surface_described: true
+      agent_skills: derived
+      well_known_catalog: true
+      consent_identity: false
+      agent_card: false
+      dry_run_mode: false
+      delegated_identity: false
+      protected_resource_metadata: false
+      dynamic_client_registration: false
+      agentic_commerce: false
+  regulatory:
+    applies: true
+    regime: Health
+    regime_id: health
+    score: 37.5
+    matched_via: tags
+  provenance:
+    mcp: first-party
+    skills: derived
+    agentic_access: derived
+    conformance: derived
+    contracts:
+      total: 16
+      derived: 0
+      coverage: 0.0
+      callable: 100.0
