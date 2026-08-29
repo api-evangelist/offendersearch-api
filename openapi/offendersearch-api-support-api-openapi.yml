@@ -84,28 +84,36 @@ paths:
       - Support
 components:
   schemas:
-    RateLimitError:
+    Error:
       type: object
-      description: 'A refusal that will succeed if you wait. `detail.retryAfterSeconds` always equals the `Retry-After` header — read either, but read one: retrying immediately will simply be refused again.
-
-        '
+      description: Standard FastAPI error body.
       properties:
         detail:
-          type: object
-          properties:
-            code:
-              type: string
-              enum:
-              - rate_limited
-              - overloaded
-              description: '`rate_limited` is a per-caller quota and clears by itself. `overloaded` means the service is at capacity.
+          type: string
+          description: Human-readable error message.
+          example: Missing or invalid API key. Send it in the X-API-Key header.
+    SupportResult:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - received
+          description: '`received` means the message is recorded and retrievable by `submissionId`.
 
-                '
-            message:
-              type: string
-            retryAfterSeconds:
-              type: integer
-              description: Seconds to wait before retrying. Same as `Retry-After`.
+            '
+        submissionId:
+          type: string
+          description: 'The reference for this message. Quote it if you follow up about the same thread.
+
+            '
+          example: sup_9f2c1a4b6d8e0f31
+        supportEmail:
+          type: string
+          description: 'The address a reply will come from, and the address you can write to directly instead of using this endpoint.
+
+            '
+          example: support@offendersearch.app
     SupportRequest:
       type: object
       required:
@@ -157,36 +165,28 @@ components:
           description: 'Optional. Unix time in milliseconds when the form was displayed. Omit it if you are calling the endpoint directly — its absence is not held against a submission.
 
             '
-    SupportResult:
+    RateLimitError:
       type: object
-      properties:
-        status:
-          type: string
-          enum:
-          - received
-          description: '`received` means the message is recorded and retrievable by `submissionId`.
+      description: 'A refusal that will succeed if you wait. `detail.retryAfterSeconds` always equals the `Retry-After` header — read either, but read one: retrying immediately will simply be refused again.
 
-            '
-        submissionId:
-          type: string
-          description: 'The reference for this message. Quote it if you follow up about the same thread.
-
-            '
-          example: sup_9f2c1a4b6d8e0f31
-        supportEmail:
-          type: string
-          description: 'The address a reply will come from, and the address you can write to directly instead of using this endpoint.
-
-            '
-          example: support@offendersearch.app
-    Error:
-      type: object
-      description: Standard FastAPI error body.
+        '
       properties:
         detail:
-          type: string
-          description: Human-readable error message.
-          example: Missing or invalid API key. Send it in the X-API-Key header.
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+              - rate_limited
+              - overloaded
+              description: '`rate_limited` is a per-caller quota and clears by itself. `overloaded` means the service is at capacity.
+
+                '
+            message:
+              type: string
+            retryAfterSeconds:
+              type: integer
+              description: Seconds to wait before retrying. Same as `Retry-After`.
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

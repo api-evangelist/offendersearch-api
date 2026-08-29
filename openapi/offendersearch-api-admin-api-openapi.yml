@@ -349,28 +349,6 @@ paths:
       - Admin
 components:
   schemas:
-    WarmQuery:
-      type: object
-      description: An internal warm query (kept hot). curated or top-derived.
-      properties:
-        query:
-          $ref: '#/components/schemas/Query'
-        jurisdictions:
-          type: array
-          items:
-            type: string
-          nullable: true
-        locationScoped:
-          type: boolean
-          default: false
-        source:
-          type: string
-          enum:
-          - curated
-          - derived
-        frequency:
-          type: integer
-          description: Observed customer-search count (derived queries only).
     Error:
       type: object
       description: Standard FastAPI error body.
@@ -379,6 +357,32 @@ components:
           type: string
           description: Human-readable error message.
           example: Missing or invalid API key. Send it in the X-API-Key header.
+    CacheStats:
+      type: object
+      properties:
+        hitRate:
+          type: number
+          description: Fraction of sync calls served from cache.
+        hotSetSize:
+          type: integer
+        lastWarmRunAt:
+          type: string
+          format: date-time
+          nullable: true
+        staleEntries:
+          type: integer
+        perRegistry:
+          type: array
+          items:
+            type: object
+            properties:
+              registry:
+                type: string
+              warmSuccess:
+                type: boolean
+              lastWarmedAt:
+                type: string
+                format: date-time
     AdminAccount:
       type: object
       properties:
@@ -397,24 +401,6 @@ components:
         activeKeys:
           type: integer
         searchCount:
-          type: integer
-    WarmRunResult:
-      type: object
-      properties:
-        warmed:
-          type: integer
-        failed:
-          type: integer
-        freshness:
-          type: string
-          enum:
-          - standard
-          - weekly
-          - daily
-        startedAt:
-          type: string
-          format: date-time
-        durationMs:
           type: integer
     Query:
       type: object
@@ -577,6 +563,24 @@ components:
           description: 'What to do with a record that matches on NAME but whose published age contradicts the searched `dob`. `drop` (default) omits it. `flag` RETURNS it, labelled `matchState: "age_mismatch"`, and lets you judge — "silently omitted" and "checked, and the age contradicts your date" are different facts. A flagged record is always `unverified` and can never be reported as DOB-confirmed.
 
             '
+    WarmRunResult:
+      type: object
+      properties:
+        warmed:
+          type: integer
+        failed:
+          type: integer
+        freshness:
+          type: string
+          enum:
+          - standard
+          - weekly
+          - daily
+        startedAt:
+          type: string
+          format: date-time
+        durationMs:
+          type: integer
     IngestRegistryRow:
       type: object
       properties:
@@ -628,19 +632,6 @@ components:
         freshnessAgeHours:
           type: number
           nullable: true
-    IngestReport:
-      type: object
-      description: 'Latest per-run ingest report. When no run has produced one yet, only `available:false` (+ note/reportDir) is returned.
-
-        '
-      properties:
-        available:
-          type: boolean
-        note:
-          type: string
-        reportDir:
-          type: string
-      additionalProperties: true
     ScraperRun:
       type: object
       description: One scraper call within a search — the atomic diagnostic record.
@@ -678,6 +669,28 @@ components:
         query_hash:
           type: string
           description: Ties run to a search, no PII.
+    WarmQuery:
+      type: object
+      description: An internal warm query (kept hot). curated or top-derived.
+      properties:
+        query:
+          $ref: '#/components/schemas/Query'
+        jurisdictions:
+          type: array
+          items:
+            type: string
+          nullable: true
+        locationScoped:
+          type: boolean
+          default: false
+        source:
+          type: string
+          enum:
+          - curated
+          - derived
+        frequency:
+          type: integer
+          description: Observed customer-search count (derived queries only).
     ScraperHealth:
       type: object
       properties:
@@ -716,32 +729,19 @@ components:
               last_error:
                 type: string
                 nullable: true
-    CacheStats:
+    IngestReport:
       type: object
+      description: 'Latest per-run ingest report. When no run has produced one yet, only `available:false` (+ note/reportDir) is returned.
+
+        '
       properties:
-        hitRate:
-          type: number
-          description: Fraction of sync calls served from cache.
-        hotSetSize:
-          type: integer
-        lastWarmRunAt:
+        available:
+          type: boolean
+        note:
           type: string
-          format: date-time
-          nullable: true
-        staleEntries:
-          type: integer
-        perRegistry:
-          type: array
-          items:
-            type: object
-            properties:
-              registry:
-                type: string
-              warmSuccess:
-                type: boolean
-              lastWarmedAt:
-                type: string
-                format: date-time
+        reportDir:
+          type: string
+      additionalProperties: true
     IngestStatus:
       type: object
       description: Per-registry nightly-ingest freshness view (GET /admin/ingest/status).

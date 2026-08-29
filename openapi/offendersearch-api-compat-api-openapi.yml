@@ -229,6 +229,89 @@ paths:
       - Compat
 components:
   schemas:
+    OffendersIoRequest:
+      type: object
+      description: offenders.io parameters, accepted verbatim.
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dob:
+          type: string
+          format: date
+        age:
+          type: integer
+        city:
+          type: string
+        state:
+          type: string
+        zipcode:
+          type: string
+        address:
+          type: string
+          description: Cannot be combined with q or lat/lng (400).
+        lat:
+          type: number
+        lng:
+          type: number
+        radius:
+          type: number
+          description: Miles; defaults to 1 when a point is given, capped at 100. GIS pages are 50/page.
+        q:
+          type: string
+          description: Cannot be combined with firstName/lastName or lat/lng (400).
+        fuzzy:
+          type: boolean
+        mode:
+          type: string
+          enum:
+          - extensive
+        prefixMatch:
+          description: 'Partial-name search — the name is treated as the START of a name (min 3 characters), matched against aliases too. "both" prefixes first and last name together.
+
+            '
+          oneOf:
+          - type: string
+            enum:
+            - firstName
+            - lastName
+            - both
+          - type: array
+            items:
+              type: string
+              enum:
+              - firstName
+              - lastName
+        faceId:
+          type: string
+          description: Not supported — returns 422.
+        createdAtStart:
+          type: string
+          format: date-time
+        createdAtEnd:
+          type: string
+          format: date-time
+        updatedAtStart:
+          type: string
+          format: date-time
+          description: GIS searches default to the last 90 days of updates unless this is set.
+        updatedAtEnd:
+          type: string
+          format: date-time
+        uuid:
+          type: string
+          description: 'Direct record lookup (parity), database-backed since 2026-08-04. Pass the `uuid` a search returned. BEFORE that date this accepted only our internal `rec_…` id, so feeding back the `uuid` this same endpoint publishes returned an empty `offenders` array 100% of the time. An empty result means the id is not CURRENT (registries re-issue ids in bulk), not that the person is unregistered — re-search by name and state. Combine with `state` when the id may be shared across jurisdictions; without it every match is returned.
+
+            '
+        personUuid:
+          type: string
+          description: Alias of `uuid` for direct record lookup (parity). Same semantics.
+        page:
+          type: integer
+          default: 1
+        perPage:
+          type: integer
     OffendersIoOffender:
       type: object
       description: 'offenders.io''s flat offender object — every one of their 38 keys, plus additive extras (personUuid, county, stateData, matchConfidence). lat/lng default to -1 (their missing/needs-geocoding sentinel), not null.
@@ -409,18 +492,6 @@ components:
           type: number
           nullable: true
           description: Additive.
-    CompatError:
-      type: object
-      description: 'offenders.io-shaped error body (returned by the /v1/compat/sexoffender endpoint instead of the standard `{detail}` shape).
-
-        '
-      properties:
-        code:
-          type: integer
-          example: 401
-        message:
-          type: string
-          example: Missing or invalid API key.
     StateData:
       type: object
       description: 'Parity: offenders.io extensive stateData (retained only for include=stateData/extensive).'
@@ -600,89 +671,6 @@ components:
           description: 'Shoe width as Texas DPS records it — a US last code (`D`, `EEE`, `B`), not a measurement. **Texas only**, same empty-string caveat and same `UNKNOWN` normalisation as `shoeSize`. NOTE: `""` on 100% of records until the next Texas bulk drop — the reader landed 2026-08-04 and no export has been ingested since.
 
             '
-    OffendersIoRequest:
-      type: object
-      description: offenders.io parameters, accepted verbatim.
-      properties:
-        firstName:
-          type: string
-        lastName:
-          type: string
-        dob:
-          type: string
-          format: date
-        age:
-          type: integer
-        city:
-          type: string
-        state:
-          type: string
-        zipcode:
-          type: string
-        address:
-          type: string
-          description: Cannot be combined with q or lat/lng (400).
-        lat:
-          type: number
-        lng:
-          type: number
-        radius:
-          type: number
-          description: Miles; defaults to 1 when a point is given, capped at 100. GIS pages are 50/page.
-        q:
-          type: string
-          description: Cannot be combined with firstName/lastName or lat/lng (400).
-        fuzzy:
-          type: boolean
-        mode:
-          type: string
-          enum:
-          - extensive
-        prefixMatch:
-          description: 'Partial-name search — the name is treated as the START of a name (min 3 characters), matched against aliases too. "both" prefixes first and last name together.
-
-            '
-          oneOf:
-          - type: string
-            enum:
-            - firstName
-            - lastName
-            - both
-          - type: array
-            items:
-              type: string
-              enum:
-              - firstName
-              - lastName
-        faceId:
-          type: string
-          description: Not supported — returns 422.
-        createdAtStart:
-          type: string
-          format: date-time
-        createdAtEnd:
-          type: string
-          format: date-time
-        updatedAtStart:
-          type: string
-          format: date-time
-          description: GIS searches default to the last 90 days of updates unless this is set.
-        updatedAtEnd:
-          type: string
-          format: date-time
-        uuid:
-          type: string
-          description: 'Direct record lookup (parity), database-backed since 2026-08-04. Pass the `uuid` a search returned. BEFORE that date this accepted only our internal `rec_…` id, so feeding back the `uuid` this same endpoint publishes returned an empty `offenders` array 100% of the time. An empty result means the id is not CURRENT (registries re-issue ids in bulk), not that the person is unregistered — re-search by name and state. Combine with `state` when the id may be shared across jurisdictions; without it every match is returned.
-
-            '
-        personUuid:
-          type: string
-          description: Alias of `uuid` for direct record lookup (parity). Same semantics.
-        page:
-          type: integer
-          default: 1
-        perPage:
-          type: integer
     OffendersIoResponse:
       type: object
       description: offenders.io envelope, returned verbatim for compat.
@@ -699,6 +687,18 @@ components:
           type: integer
           nullable: true
           description: 'offenders.io convention: present (e.g. 503) when the result set may be incomplete (deadline-partial or a source errored).'
+    CompatError:
+      type: object
+      description: 'offenders.io-shaped error body (returned by the /v1/compat/sexoffender endpoint instead of the standard `{detail}` shape).
+
+        '
+      properties:
+        code:
+          type: integer
+          example: 401
+        message:
+          type: string
+          example: Missing or invalid API key.
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

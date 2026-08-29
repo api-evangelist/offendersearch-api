@@ -47,22 +47,15 @@ paths:
       tags:
       - Report
 components:
-  responses:
-    Unauthorized:
-      description: Missing or invalid credential.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unprocessable:
-      description: 'Unprocessable request — e.g. `faceId` supplied (facial search is not supported; we never fake a face match).
-
-        '
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   schemas:
+    Error:
+      type: object
+      description: Standard FastAPI error body.
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message.
+          example: Missing or invalid API key. Send it in the X-API-Key header.
     ReportRequest:
       description: 'Generate a verification report for a search that was ALREADY run: pass the `searchId` returned by a prior `POST /v1/search` (or `/v1/searches`) call — up to 7 days afterward. The viewer identity (`viewerName`/`viewerEmail`, or the legacy `requesterName`) is OPTIONAL and is printed at the top of the PDF as a record of who viewed it — it is NOT an access gate. A legacy one-shot mode is still supported: omit `searchId` and pass an inline `query` (+ optional `jurisdictions`/`locationScoped`/`freshness`) to run the search inline. Provide EITHER a `searchId` OR a `query`.
 
@@ -276,14 +269,21 @@ components:
           description: 'What to do with a record that matches on NAME but whose published age contradicts the searched `dob`. `drop` (default) omits it. `flag` RETURNS it, labelled `matchState: "age_mismatch"`, and lets you judge — "silently omitted" and "checked, and the age contradicts your date" are different facts. A flagged record is always `unverified` and can never be reported as DOB-confirmed.
 
             '
-    Error:
-      type: object
-      description: Standard FastAPI error body.
-      properties:
-        detail:
-          type: string
-          description: Human-readable error message.
-          example: Missing or invalid API key. Send it in the X-API-Key header.
+  responses:
+    Unprocessable:
+      description: 'Unprocessable request — e.g. `faceId` supplied (facial search is not supported; we never fake a face match).
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid credential.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

@@ -117,14 +117,15 @@ paths:
       tags:
       - Keys
 components:
-  responses:
-    Unauthorized:
-      description: Missing or invalid credential.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   schemas:
+    Error:
+      type: object
+      description: Standard FastAPI error body.
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message.
+          example: Missing or invalid API key. Send it in the X-API-Key header.
     CreateKeyBody:
       type: object
       properties:
@@ -145,22 +146,6 @@ components:
           type: boolean
           nullable: true
           description: Whether the key may request proof docs. Defaults true.
-    ApiKeyWithSecret:
-      allOf:
-      - $ref: '#/components/schemas/ApiKey'
-      - type: object
-        properties:
-          secret:
-            type: string
-            description: Full key secret — returned ONCE on create/rotate; only its hash is stored.
-    Error:
-      type: object
-      description: Standard FastAPI error body.
-      properties:
-        detail:
-          type: string
-          description: Human-readable error message.
-          example: Missing or invalid API key. Send it in the X-API-Key header.
     ApiKey:
       type: object
       properties:
@@ -196,6 +181,21 @@ components:
                 - daily
             proof:
               type: boolean
+    ApiKeyWithSecret:
+      allOf:
+      - $ref: '#/components/schemas/ApiKey'
+      - type: object
+        properties:
+          secret:
+            type: string
+            description: Full key secret — returned ONCE on create/rotate; only its hash is stored.
+  responses:
+    Unauthorized:
+      description: Missing or invalid credential.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
