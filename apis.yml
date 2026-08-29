@@ -14,6 +14,18 @@ description: 'Offendersearch, Inc. operates a REST API that unifies US sex-offen
   documentation page, and a documented (private-beta) MCP server. Pricing is purely metered at $0.15 per
   call, $0.11 above 2,000 a month. Offendersearch is expressly not a consumer reporting agency and its
   results are not a consumer report.'
+deliveryModel:
+  model: saas
+  open_source: false
+  commercial: true
+  callable_host: true
+  label: Hosted service · you call their endpoint
+  confidence: high
+  source:
+  - openapi
+  - pricing
+  generated: '2026-08-28'
+  method: derived
 image: https://offendersearch.app/opengraph-image.png
 url: https://offendersearch-api.apievangelist.com/apis.yml
 created: '2026-08-18'
