@@ -32,19 +32,19 @@ created: '2026-08-18'
 modified: '2026-08-18'
 specificationVersion: '0.23'
 tags:
-- Background Checks
+- background-checks
 - Identity Verification
-- Public Records
-- Criminal Records
+- public-records
+- criminal-records
 - Compliance
-- Trust and Safety
-- HR Tech
-- Recruiting
-- PropTech
-- Tenant Screening
+- trust-and-safety
+- hr-tech
+- recruiting
+- proptech
+- tenant-screening
 - healthcare-screening
-- Data API
-- MCP Server
+- data-api
+- mcp-server
 - agent-native
 tags_raw:
 - background-checks
