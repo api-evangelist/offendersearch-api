@@ -70,25 +70,6 @@ paths:
       - Auth
 components:
   schemas:
-    Account:
-      type: object
-      properties:
-        id:
-          type: string
-        orgName:
-          type: string
-        email:
-          type: string
-          format: email
-        billingEnabled:
-          type: boolean
-        plan:
-          type: string
-          enum:
-          - metered
-        createdAt:
-          type: string
-          format: date-time
     Error:
       type: object
       description: Standard FastAPI error body.
@@ -116,6 +97,14 @@ components:
           type: boolean
           default: false
           description: Must be true to sign up.
+    AuthResult:
+      type: object
+      properties:
+        token:
+          type: string
+          description: 'Signed session token (use as Authorization: Bearer).'
+        account:
+          $ref: '#/components/schemas/Account'
     LoginBody:
       type: object
       required:
@@ -127,14 +116,25 @@ components:
           format: email
         password:
           type: string
-    AuthResult:
+    Account:
       type: object
       properties:
-        token:
+        id:
           type: string
-          description: 'Signed session token (use as Authorization: Bearer).'
-        account:
-          $ref: '#/components/schemas/Account'
+        orgName:
+          type: string
+        email:
+          type: string
+          format: email
+        billingEnabled:
+          type: boolean
+        plan:
+          type: string
+          enum:
+          - metered
+        createdAt:
+          type: string
+          format: date-time
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

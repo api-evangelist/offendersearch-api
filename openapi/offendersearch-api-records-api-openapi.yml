@@ -50,7 +50,130 @@ paths:
       tags:
       - Records
 components:
+  responses:
+    Unauthorized:
+      description: Missing or invalid credential.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
+    Offense:
+      type: object
+      description: 'Structured offense (richer than offenders.io''s single packed `crime` string).
+
+        '
+      properties:
+        crime:
+          type: string
+        statute:
+          type: string
+        riskLevel:
+          type: string
+          description: 'The registry''s RISK CLASSIFICATION for this registrant, verbatim (`"Tier 3"`, `"Level 2"`, `"MODERATE"`), or `""`. **Not comparable across states** — each is a different statutory scale, and there is no cross-state severity ranking in this API. **Many states run no risk scheme at all and return `""`; that is a fact about the statute, not about the registrant, and it never means low risk.** It is also NOT a registration status: for whether a registrant is confined, absconded, deported or deceased, read `stateData.status`. **Florida** defines a statutory *designation* rather than a tier, so Florida records return `riskLevel: ""` and carry `"Sexual Predator"` / `"Sexual Offender"` / `"Juvenile Sexual Offender"` in `stateData.designation` (and the `flags.predator` boolean).
+
+            '
+        tier:
+          type: string
+          description: 'The registry''s TIER, where it publishes one separately from `riskLevel`, verbatim (`"Tier 3"`, `"II"`), or `""`. Frequently a duplicate of `riskLevel`; same cross-state caveat.
+
+            '
+        convictionDate:
+          type: string
+          description: 'ISO-8601. `YYYY-MM-DD`, or the reduced-precision `YYYY-MM` / `YYYY` when the registry publishes only a month or a year, or `""`. Read `datePrecision.convictionDate` to tell those apart without measuring the string length. ★ BREAKING 2026-08-04 — this used to be the registry''s string passed through verbatim, so one response could carry "2003-03-31", "10/11/1988", "11-29-1987" and "Aug. 10, 1987" in the same key. The original text is still available in `datesAsPublished`.
+
+            '
+        offenseDate:
+          type: string
+          description: 'Date the OFFENCE was committed — a different fact from `convictionDate` and never a substitute for it. Published by TN (whose offences table is headed literally "DATE OF OFFENSE"), PA, IL, MO, KS and NY. ISO-8601, same rules as `convictionDate`. ★ BREAKING 2026-08-04 — format changed; it was ISO on only 45.4% of its populated values before.
+
+            '
+        registrationDate:
+          type: string
+          description: ISO-8601, same rules as `convictionDate`. ★ Format changed 2026-08-04.
+        releaseDate:
+          type: string
+          description: ISO-8601, same rules as `convictionDate`. ★ Format changed 2026-08-04.
+        datePrecision:
+          type: object
+          additionalProperties:
+            type: string
+            enum:
+            - exact
+            - year_month
+            - year
+            - none
+            - unparseable
+          description: 'How much of each date this registry actually published. One entry for every date key on this object — `convictionDate`, `offenseDate`, `registrationDate`, `releaseDate` — always all four, always present. `exact` = a full `YYYY-MM-DD`. `year_month` = the value is `YYYY-MM`; no day was published and none was invented. `year` = the value is `YYYY`. `none` = the registry published nothing, or published a placeholder meaning "no date" (`0001-01-01`, `01/01/9999`). `unparseable` = the registry published something that is not a date; the value is `""` and the original text is in `datesAsPublished`. Same idea as `dobPrecision`.
+
+            '
+        datesAsPublished:
+          type: object
+          additionalProperties:
+            type: string
+          description: 'The registry''s ORIGINAL text for any date key whose published form is not byte-identical to what we now emit — e.g. `{"convictionDate": "10/11/1988"}`. `{}` when every date round-tripped unchanged. Nothing is ever discarded to normalise: values we cannot read as dates (Tennessee''s 40 offence-date cells holding a crime description, Wisconsin''s `registrationEnds` of "15 Years") appear here rather than being blanked. Use it when you need the registry''s literal rendering, or to audit anything marked `unparseable`. Since 2026-08-05 this text is STORED rather than re-derived on each response, so it survives the normalisation permanently — the source''s own rendering is not something we can lose by changing a parser later.
+
+            '
+        caseNumber:
+          type: string
+        victimAge:
+          type: string
+        victimSex:
+          type: string
+        jurisdiction:
+          type: string
+          description: 'Conviction jurisdiction — the two-letter STATE code, never the county and never a court name. Where a registry publishes a composite (a county and a state in one column, or a category label wrapped around the code) the parts are separated into `convictionCounty` / `convictionCity` / `federal` and this field carries the state alone. It is left as the registry''s own text ONLY where the source value carries a fact with no other field to hold it — e.g. Florida''s `Interstate, GA` (an interstate compact transfer) or Texas''s `Military (YY)`.
+
+            '
+        convictionCounty:
+          type: string
+          description: 'County in which the conviction was entered, as the registry publishes it. A different fact from the registrant''s residence county (`addresses[].county`). Registries head this column very differently and it is captured from each of them: OK `CASE_REFERENCE_COUNTY`, the OffenderWatch cluster "County of Conviction", FL/ND "Jurisdiction & State", IL "Conviction State or IL County", ID "Place of Conviction", MS "Location", NE "Jurisdiction", NC "County - State", KS a "County" column beside a "State" column, MI/WI/IA a dedicated county column. Out-of-state convictions keep their own county and their own `jurisdiction` — a Florida registrant convicted in Cherokee County, Georgia is served as `convictionCounty: "Cherokee"`, `jurisdiction: "GA"`.
+
+            '
+        convictionCity:
+          type: string
+          description: 'City in which the conviction was entered (OK `CONVICTION_CITY`; AK names the venue city in the convicting court''s own name, e.g. "SUPERIOR COURT PALMER").
+
+            '
+        convictionCount:
+          type: string
+          description: 'How many convictions this offence row represents. MA publishes it as "No. of Convictions"; the OffenderWatch cluster and MT publish it as "Counts". One offence ROW is not one conviction.
+
+            '
+        federal:
+          type: boolean
+          nullable: true
+          description: 'True when the registry marks the conviction as FEDERAL rather than state (OK''s per-offence "Fed?" Y/N column). `null` = not published.
+
+            '
+    Error:
+      type: object
+      description: Standard FastAPI error body.
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message.
+          example: Missing or invalid API key. Send it in the X-API-Key header.
+    Name:
+      type: object
+      properties:
+        first:
+          type: string
+        middle:
+          type: string
+        last:
+          type: string
+        suffix:
+          type: string
+        full:
+          type: string
+          description: 'Computed: first middle last suffix, joined.'
     StateData:
       type: object
       description: 'Parity: offenders.io extensive stateData (retained only for include=stateData/extensive).'
@@ -230,171 +353,6 @@ components:
           description: 'Shoe width as Texas DPS records it — a US last code (`D`, `EEE`, `B`), not a measurement. **Texas only**, same empty-string caveat and same `UNKNOWN` normalisation as `shoeSize`. NOTE: `""` on 100% of records until the next Texas bulk drop — the reader landed 2026-08-04 and no export has been ingested since.
 
             '
-    Offense:
-      type: object
-      description: 'Structured offense (richer than offenders.io''s single packed `crime` string).
-
-        '
-      properties:
-        crime:
-          type: string
-        statute:
-          type: string
-        riskLevel:
-          type: string
-          description: 'The registry''s RISK CLASSIFICATION for this registrant, verbatim (`"Tier 3"`, `"Level 2"`, `"MODERATE"`), or `""`. **Not comparable across states** — each is a different statutory scale, and there is no cross-state severity ranking in this API. **Many states run no risk scheme at all and return `""`; that is a fact about the statute, not about the registrant, and it never means low risk.** It is also NOT a registration status: for whether a registrant is confined, absconded, deported or deceased, read `stateData.status`. **Florida** defines a statutory *designation* rather than a tier, so Florida records return `riskLevel: ""` and carry `"Sexual Predator"` / `"Sexual Offender"` / `"Juvenile Sexual Offender"` in `stateData.designation` (and the `flags.predator` boolean).
-
-            '
-        tier:
-          type: string
-          description: 'The registry''s TIER, where it publishes one separately from `riskLevel`, verbatim (`"Tier 3"`, `"II"`), or `""`. Frequently a duplicate of `riskLevel`; same cross-state caveat.
-
-            '
-        convictionDate:
-          type: string
-          description: 'ISO-8601. `YYYY-MM-DD`, or the reduced-precision `YYYY-MM` / `YYYY` when the registry publishes only a month or a year, or `""`. Read `datePrecision.convictionDate` to tell those apart without measuring the string length. ★ BREAKING 2026-08-04 — this used to be the registry''s string passed through verbatim, so one response could carry "2003-03-31", "10/11/1988", "11-29-1987" and "Aug. 10, 1987" in the same key. The original text is still available in `datesAsPublished`.
-
-            '
-        offenseDate:
-          type: string
-          description: 'Date the OFFENCE was committed — a different fact from `convictionDate` and never a substitute for it. Published by TN (whose offences table is headed literally "DATE OF OFFENSE"), PA, IL, MO, KS and NY. ISO-8601, same rules as `convictionDate`. ★ BREAKING 2026-08-04 — format changed; it was ISO on only 45.4% of its populated values before.
-
-            '
-        registrationDate:
-          type: string
-          description: ISO-8601, same rules as `convictionDate`. ★ Format changed 2026-08-04.
-        releaseDate:
-          type: string
-          description: ISO-8601, same rules as `convictionDate`. ★ Format changed 2026-08-04.
-        datePrecision:
-          type: object
-          additionalProperties:
-            type: string
-            enum:
-            - exact
-            - year_month
-            - year
-            - none
-            - unparseable
-          description: 'How much of each date this registry actually published. One entry for every date key on this object — `convictionDate`, `offenseDate`, `registrationDate`, `releaseDate` — always all four, always present. `exact` = a full `YYYY-MM-DD`. `year_month` = the value is `YYYY-MM`; no day was published and none was invented. `year` = the value is `YYYY`. `none` = the registry published nothing, or published a placeholder meaning "no date" (`0001-01-01`, `01/01/9999`). `unparseable` = the registry published something that is not a date; the value is `""` and the original text is in `datesAsPublished`. Same idea as `dobPrecision`.
-
-            '
-        datesAsPublished:
-          type: object
-          additionalProperties:
-            type: string
-          description: 'The registry''s ORIGINAL text for any date key whose published form is not byte-identical to what we now emit — e.g. `{"convictionDate": "10/11/1988"}`. `{}` when every date round-tripped unchanged. Nothing is ever discarded to normalise: values we cannot read as dates (Tennessee''s 40 offence-date cells holding a crime description, Wisconsin''s `registrationEnds` of "15 Years") appear here rather than being blanked. Use it when you need the registry''s literal rendering, or to audit anything marked `unparseable`. Since 2026-08-05 this text is STORED rather than re-derived on each response, so it survives the normalisation permanently — the source''s own rendering is not something we can lose by changing a parser later.
-
-            '
-        caseNumber:
-          type: string
-        victimAge:
-          type: string
-        victimSex:
-          type: string
-        jurisdiction:
-          type: string
-          description: 'Conviction jurisdiction — the two-letter STATE code, never the county and never a court name. Where a registry publishes a composite (a county and a state in one column, or a category label wrapped around the code) the parts are separated into `convictionCounty` / `convictionCity` / `federal` and this field carries the state alone. It is left as the registry''s own text ONLY where the source value carries a fact with no other field to hold it — e.g. Florida''s `Interstate, GA` (an interstate compact transfer) or Texas''s `Military (YY)`.
-
-            '
-        convictionCounty:
-          type: string
-          description: 'County in which the conviction was entered, as the registry publishes it. A different fact from the registrant''s residence county (`addresses[].county`). Registries head this column very differently and it is captured from each of them: OK `CASE_REFERENCE_COUNTY`, the OffenderWatch cluster "County of Conviction", FL/ND "Jurisdiction & State", IL "Conviction State or IL County", ID "Place of Conviction", MS "Location", NE "Jurisdiction", NC "County - State", KS a "County" column beside a "State" column, MI/WI/IA a dedicated county column. Out-of-state convictions keep their own county and their own `jurisdiction` — a Florida registrant convicted in Cherokee County, Georgia is served as `convictionCounty: "Cherokee"`, `jurisdiction: "GA"`.
-
-            '
-        convictionCity:
-          type: string
-          description: 'City in which the conviction was entered (OK `CONVICTION_CITY`; AK names the venue city in the convicting court''s own name, e.g. "SUPERIOR COURT PALMER").
-
-            '
-        convictionCount:
-          type: string
-          description: 'How many convictions this offence row represents. MA publishes it as "No. of Convictions"; the OffenderWatch cluster and MT publish it as "Counts". One offence ROW is not one conviction.
-
-            '
-        federal:
-          type: boolean
-          nullable: true
-          description: 'True when the registry marks the conviction as FEDERAL rather than state (OK''s per-offence "Fed?" Y/N column). `null` = not published.
-
-            '
-    Error:
-      type: object
-      description: Standard FastAPI error body.
-      properties:
-        detail:
-          type: string
-          description: Human-readable error message.
-          example: Missing or invalid API key. Send it in the X-API-Key header.
-    Address:
-      type: object
-      properties:
-        type:
-          type: string
-          default: residence
-          description: 'Address kind. This is an OPEN vocabulary, not a closed enum — treat it as a string with a common case. Values observed in production, by frequency: `residence` (~85%), `employment` (~8%), `other` (~4%), `incarceration`, `H`, `O`, `school`, `transient`, `RL`. The single-letter values are raw registry codes that are not yet normalized. Match `residence` explicitly and bucket everything else rather than switching exhaustively.
-
-            '
-          example: residence
-        line1:
-          type: string
-        city:
-          type: string
-        county:
-          type: string
-        state:
-          type: string
-        zipcode:
-          type: string
-        lat:
-          type: number
-          nullable: true
-          description: Populated only for GIS/geocoded sources.
-        lng:
-          type: number
-          nullable: true
-    Name:
-      type: object
-      properties:
-        first:
-          type: string
-        middle:
-          type: string
-        last:
-          type: string
-        suffix:
-          type: string
-        full:
-          type: string
-          description: 'Computed: first middle last suffix, joined.'
-    SourceRef:
-      type: object
-      description: Provenance stamp — mandatory on every record's primary source.
-      properties:
-        jurisdiction:
-          type: string
-          description: Jurisdiction code, e.g. IL.
-          example: IL
-        registryName:
-          type: string
-        recordUrl:
-          type: string
-          format: uri
-          description: Link to the underlying record.
-        scrapedAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: createdAt basis — when we first recorded it.
-        lastCheckedAt:
-          type: string
-          format: date-time
-          nullable: true
-        sourceUpdatedAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: updatedAt basis — when the source last changed the record.
     Record:
       type: object
       description: 'One normalized offender record (offenders.io-parity superset + our extensions).
@@ -750,19 +708,61 @@ components:
         unverified:
           type: boolean
           description: True when the record had NO DOB and NO age to verify against — shown anyway, flagged.
-  responses:
-    NotFound:
-      description: Not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid credential.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
+    SourceRef:
+      type: object
+      description: Provenance stamp — mandatory on every record's primary source.
+      properties:
+        jurisdiction:
+          type: string
+          description: Jurisdiction code, e.g. IL.
+          example: IL
+        registryName:
+          type: string
+        recordUrl:
+          type: string
+          format: uri
+          description: Link to the underlying record.
+        scrapedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: createdAt basis — when we first recorded it.
+        lastCheckedAt:
+          type: string
+          format: date-time
+          nullable: true
+        sourceUpdatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: updatedAt basis — when the source last changed the record.
+    Address:
+      type: object
+      properties:
+        type:
+          type: string
+          default: residence
+          description: 'Address kind. This is an OPEN vocabulary, not a closed enum — treat it as a string with a common case. Values observed in production, by frequency: `residence` (~85%), `employment` (~8%), `other` (~4%), `incarceration`, `H`, `O`, `school`, `transient`, `RL`. The single-letter values are raw registry codes that are not yet normalized. Match `residence` explicitly and bucket everything else rather than switching exhaustively.
+
+            '
+          example: residence
+        line1:
+          type: string
+        city:
+          type: string
+        county:
+          type: string
+        state:
+          type: string
+        zipcode:
+          type: string
+        lat:
+          type: number
+          nullable: true
+          description: Populated only for GIS/geocoded sources.
+        lng:
+          type: number
+          nullable: true
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

@@ -52,14 +52,14 @@ components:
           description: Human-readable error message.
           example: Missing or invalid API key. Send it in the X-API-Key header.
   responses:
-    NotFound:
-      description: Not found.
+    Unauthorized:
+      description: Missing or invalid credential.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid credential.
+    NotFound:
+      description: Not found.
       content:
         application/json:
           schema:

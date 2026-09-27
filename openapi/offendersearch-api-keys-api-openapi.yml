@@ -117,14 +117,15 @@ paths:
       tags:
       - Keys
 components:
-  responses:
-    Unauthorized:
-      description: Missing or invalid credential.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   schemas:
+    ApiKeyWithSecret:
+      allOf:
+      - $ref: '#/components/schemas/ApiKey'
+      - type: object
+        properties:
+          secret:
+            type: string
+            description: Full key secret — returned ONCE on create/rotate; only its hash is stored.
     Error:
       type: object
       description: Standard FastAPI error body.
@@ -133,6 +134,26 @@ components:
           type: string
           description: Human-readable error message.
           example: Missing or invalid API key. Send it in the X-API-Key header.
+    CreateKeyBody:
+      type: object
+      properties:
+        name:
+          type: string
+          default: Untitled key
+        freshness:
+          type: array
+          items:
+            type: string
+            enum:
+            - standard
+            - weekly
+            - daily
+          nullable: true
+          description: LEGACY/UNENFORCED. Freshness is a PER-REQUEST parameter on /v1/search and is NOT provisioned on the key — any valid key may send `daily` or `weekly` and is billed accordingly. This field is retained for compatibility and does not gate anything.
+        proof:
+          type: boolean
+          nullable: true
+          description: Whether the key may request proof docs. Defaults true.
     ApiKey:
       type: object
       properties:
@@ -168,34 +189,13 @@ components:
                 - daily
             proof:
               type: boolean
-    CreateKeyBody:
-      type: object
-      properties:
-        name:
-          type: string
-          default: Untitled key
-        freshness:
-          type: array
-          items:
-            type: string
-            enum:
-            - standard
-            - weekly
-            - daily
-          nullable: true
-          description: LEGACY/UNENFORCED. Freshness is a PER-REQUEST parameter on /v1/search and is NOT provisioned on the key — any valid key may send `daily` or `weekly` and is billed accordingly. This field is retained for compatibility and does not gate anything.
-        proof:
-          type: boolean
-          nullable: true
-          description: Whether the key may request proof docs. Defaults true.
-    ApiKeyWithSecret:
-      allOf:
-      - $ref: '#/components/schemas/ApiKey'
-      - type: object
-        properties:
-          secret:
-            type: string
-            description: Full key secret — returned ONCE on create/rotate; only its hash is stored.
+  responses:
+    Unauthorized:
+      description: Missing or invalid credential.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

@@ -45,59 +45,22 @@ paths:
       tags:
       - Report
 components:
-  schemas:
-    ReportRequest:
-      description: 'Generate a verification report for a search that was ALREADY run: pass the `searchId` returned by a prior `POST /v1/search` (or `/v1/searches`) call — up to 7 days afterward. The viewer identity (`viewerName`/`viewerEmail`, or the legacy `requesterName`) is OPTIONAL and is printed at the top of the PDF as a record of who viewed it — it is NOT an access gate. A legacy one-shot mode is still supported: omit `searchId` and pass an inline `query` (+ optional `jurisdictions`/`locationScoped`/`freshness`) to run the search inline. Provide EITHER a `searchId` OR a `query`.
+  responses:
+    Unauthorized:
+      description: Missing or invalid credential.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unprocessable:
+      description: 'Unprocessable request — e.g. `faceId` supplied (facial search is not supported; we never fake a face match).
 
         '
-      type: object
-      properties:
-        searchId:
-          type: string
-          nullable: true
-          description: Id of a prior /v1/search (or /v1/searches) call to report on (within the 7-day window).
-          example: srch_9f2c1a7b3e4d
-        query:
-          $ref: '#/components/schemas/Query'
-        jurisdictions:
-          type: array
-          nullable: true
-          items:
-            type: string
-          description: Legacy one-shot mode only (ignored when searchId is given).
-        locationScoped:
-          type: boolean
-          default: false
-        freshness:
-          type: string
-          enum:
-          - daily
-          - weekly
-          default: daily
-        viewerName:
-          type: string
-          nullable: true
-          description: OPTIONAL — name of the person viewing/running the report (printed on the PDF).
-          example: Jane Doe, HR Compliance
-        viewerEmail:
-          type: string
-          nullable: true
-          description: OPTIONAL — email of the viewer (printed on the PDF).
-          example: jane@acme.example
-        requesterName:
-          type: string
-          nullable: true
-          description: Legacy alias for viewerName (optional).
-        purpose:
-          type: string
-          nullable: true
-          description: Optional stated purpose for the lookup (printed on the PDF).
-          example: Volunteer background screening
-        reference:
-          type: string
-          nullable: true
-          description: Optional caller reference / case id (printed on the PDF).
-          example: case-2026-0417
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
     Error:
       type: object
       description: Standard FastAPI error body.
@@ -267,21 +230,58 @@ components:
           description: 'What to do with a record that matches on NAME but whose published age contradicts the searched `dob`. `drop` (default) omits it. `flag` RETURNS it, labelled `matchState: "age_mismatch"`, and lets you judge — "silently omitted" and "checked, and the age contradicts your date" are different facts. A flagged record is always `unverified` and can never be reported as DOB-confirmed.
 
             '
-  responses:
-    Unauthorized:
-      description: Missing or invalid credential.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unprocessable:
-      description: 'Unprocessable request — e.g. `faceId` supplied (facial search is not supported; we never fake a face match).
+    ReportRequest:
+      description: 'Generate a verification report for a search that was ALREADY run: pass the `searchId` returned by a prior `POST /v1/search` (or `/v1/searches`) call — up to 7 days afterward. The viewer identity (`viewerName`/`viewerEmail`, or the legacy `requesterName`) is OPTIONAL and is printed at the top of the PDF as a record of who viewed it — it is NOT an access gate. A legacy one-shot mode is still supported: omit `searchId` and pass an inline `query` (+ optional `jurisdictions`/`locationScoped`/`freshness`) to run the search inline. Provide EITHER a `searchId` OR a `query`.
 
         '
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
+      type: object
+      properties:
+        searchId:
+          type: string
+          nullable: true
+          description: Id of a prior /v1/search (or /v1/searches) call to report on (within the 7-day window).
+          example: srch_9f2c1a7b3e4d
+        query:
+          $ref: '#/components/schemas/Query'
+        jurisdictions:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: Legacy one-shot mode only (ignored when searchId is given).
+        locationScoped:
+          type: boolean
+          default: false
+        freshness:
+          type: string
+          enum:
+          - daily
+          - weekly
+          default: daily
+        viewerName:
+          type: string
+          nullable: true
+          description: OPTIONAL — name of the person viewing/running the report (printed on the PDF).
+          example: Jane Doe, HR Compliance
+        viewerEmail:
+          type: string
+          nullable: true
+          description: OPTIONAL — email of the viewer (printed on the PDF).
+          example: jane@acme.example
+        requesterName:
+          type: string
+          nullable: true
+          description: Legacy alias for viewerName (optional).
+        purpose:
+          type: string
+          nullable: true
+          description: Optional stated purpose for the lookup (printed on the PDF).
+          example: Volunteer background screening
+        reference:
+          type: string
+          nullable: true
+          description: Optional caller reference / case id (printed on the PDF).
+          example: case-2026-0417
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
