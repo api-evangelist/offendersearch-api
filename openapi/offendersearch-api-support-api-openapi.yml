@@ -82,6 +82,14 @@ paths:
       - Support
 components:
   schemas:
+    Error:
+      type: object
+      description: Standard FastAPI error body.
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message.
+          example: Missing or invalid API key. Send it in the X-API-Key header.
     RateLimitError:
       type: object
       description: 'A refusal that will succeed if you wait. `detail.retryAfterSeconds` always equals the `Retry-After` header — read either, but read one: retrying immediately will simply be refused again.
@@ -104,14 +112,6 @@ components:
             retryAfterSeconds:
               type: integer
               description: Seconds to wait before retrying. Same as `Retry-After`.
-    Error:
-      type: object
-      description: Standard FastAPI error body.
-      properties:
-        detail:
-          type: string
-          description: Human-readable error message.
-          example: Missing or invalid API key. Send it in the X-API-Key header.
     SupportResult:
       type: object
       properties:
