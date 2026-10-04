@@ -70,14 +70,6 @@ paths:
       - Auth
 components:
   schemas:
-    AuthResult:
-      type: object
-      properties:
-        token:
-          type: string
-          description: 'Signed session token (use as Authorization: Bearer).'
-        account:
-          $ref: '#/components/schemas/Account'
     Account:
       type: object
       properties:
@@ -105,6 +97,25 @@ components:
           type: string
           description: Human-readable error message.
           example: Missing or invalid API key. Send it in the X-API-Key header.
+    AuthResult:
+      type: object
+      properties:
+        token:
+          type: string
+          description: 'Signed session token (use as Authorization: Bearer).'
+        account:
+          $ref: '#/components/schemas/Account'
+    LoginBody:
+      type: object
+      required:
+      - email
+      - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
     SignupBody:
       type: object
       required:
@@ -124,17 +135,6 @@ components:
           type: boolean
           default: false
           description: Must be true to sign up.
-    LoginBody:
-      type: object
-      required:
-      - email
-      - password
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

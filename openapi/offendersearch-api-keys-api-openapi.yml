@@ -117,13 +117,6 @@ paths:
       tags:
       - Keys
 components:
-  responses:
-    Unauthorized:
-      description: Missing or invalid credential.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   schemas:
     ApiKeyWithSecret:
       allOf:
@@ -196,6 +189,13 @@ components:
           type: boolean
           nullable: true
           description: Whether the key may request proof docs. Defaults true.
+  responses:
+    Unauthorized:
+      description: Missing or invalid credential.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

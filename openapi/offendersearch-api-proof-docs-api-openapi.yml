@@ -42,15 +42,6 @@ paths:
       tags:
       - Proof Docs
 components:
-  schemas:
-    Error:
-      type: object
-      description: Standard FastAPI error body.
-      properties:
-        detail:
-          type: string
-          description: Human-readable error message.
-          example: Missing or invalid API key. Send it in the X-API-Key header.
   responses:
     Unauthorized:
       description: Missing or invalid credential.
@@ -64,6 +55,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      description: Standard FastAPI error body.
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message.
+          example: Missing or invalid API key. Send it in the X-API-Key header.
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

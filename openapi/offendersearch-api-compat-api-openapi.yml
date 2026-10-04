@@ -225,22 +225,6 @@ paths:
       - Compat
 components:
   schemas:
-    OffendersIoResponse:
-      type: object
-      description: offenders.io envelope, returned verbatim for compat.
-      properties:
-        offenders:
-          type: array
-          items:
-            $ref: '#/components/schemas/OffendersIoOffender'
-        page:
-          type: integer
-        totalPages:
-          type: integer
-        error:
-          type: integer
-          nullable: true
-          description: 'offenders.io convention: present (e.g. 503) when the result set may be incomplete (deadline-partial or a source errored).'
     StateData:
       type: object
       description: 'Parity: offenders.io extensive stateData (retained only for include=stateData/extensive).'
@@ -420,18 +404,6 @@ components:
           description: 'Shoe width as Texas DPS records it — a US last code (`D`, `EEE`, `B`), not a measurement. **Texas only**, same empty-string caveat and same `UNKNOWN` normalisation as `shoeSize`. NOTE: `""` on 100% of records until the next Texas bulk drop — the reader landed 2026-08-04 and no export has been ingested since.
 
             '
-    CompatError:
-      type: object
-      description: 'offenders.io-shaped error body (returned by the /v1/compat/sexoffender endpoint instead of the standard `{detail}` shape).
-
-        '
-      properties:
-        code:
-          type: integer
-          example: 401
-        message:
-          type: string
-          example: Missing or invalid API key.
     OffendersIoOffender:
       type: object
       description: 'offenders.io''s flat offender object — every one of their 38 keys, plus additive extras (personUuid, county, stateData, matchConfidence). lat/lng default to -1 (their missing/needs-geocoding sentinel), not null.
@@ -695,6 +667,34 @@ components:
           default: 1
         perPage:
           type: integer
+    CompatError:
+      type: object
+      description: 'offenders.io-shaped error body (returned by the /v1/compat/sexoffender endpoint instead of the standard `{detail}` shape).
+
+        '
+      properties:
+        code:
+          type: integer
+          example: 401
+        message:
+          type: string
+          example: Missing or invalid API key.
+    OffendersIoResponse:
+      type: object
+      description: offenders.io envelope, returned verbatim for compat.
+      properties:
+        offenders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OffendersIoOffender'
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        error:
+          type: integer
+          nullable: true
+          description: 'offenders.io convention: present (e.g. 503) when the result set may be incomplete (deadline-partial or a source errored).'
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
