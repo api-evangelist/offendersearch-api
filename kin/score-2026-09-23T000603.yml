@@ -1,30 +1,28 @@
-# Kin Score artifact — offendersearch-api — 2026-08-24T171257
+# Kin Score artifact — offendersearch-api — 2026-09-23T000603
 # The API Evangelist rating (https://github.com/api-evangelist/kin-score). Generated; do not edit.
 ---
 kin_score:
   slug: offendersearch-api
-  schema_version: 0.13.0
-  scored_at: '2026-08-24'
-  run_ts: 2026-08-24T171257
-  composite: 47.4
+  schema_version: 0.22.0
+  scored_at: '2026-09-23'
+  run_ts: 2026-09-23T000603
+  composite: 52.1
   band: developing
   facets:
-    discoverability: 92.6
-    contract_quality: 59.7
-    governance: 16.7
-    operational_transparency: 0.0
-    developer_ergonomics: 18.5
-    commercial_clarity: 73.7
-    contract_governance: 16.7
+    discoverability: 75.9
+    contract_quality: 59.0
+    contract_governance: 4.5
+    operational_transparency: 7.9
+    developer_ergonomics: 56.5
     access_clarity: 73.7
   agent_readiness:
-    score: 41.9
+    score: 45.4
     band: agent-native
     dimensions:
       spec_presence: true
       agentic_access: derived
       reversibility_documented: false
-      mcp_server: false
+      mcp_server: documented
       auth_clarity: bearer
       idempotency: documented
       error_semantics: verified
