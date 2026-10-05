@@ -1,0 +1,12 @@
+{
+ "url": "https://offendersearch.app/openapi.yaml",
+ "requested_url": "https://offendersearch.app/openapi.yaml",
+ "status": 200,
+ "content_type": "text/yaml; charset=UTF-8",
+ "bytes": 204221,
+ "sha256": "a2d905e531983ee37e04ffb311f5773694817195c76b61bb3b873c48d8193990",
+ "fetched_at": "2026-10-04",
+ "fetched_by": "APIEvangelist-Harvest/1.0 (+https://apievangelist.com)",
+ "match": "equivalent",
+ "note": "Re-fetched from the provider by verify-openapi-sources.py; the provider's current document describes the same operations (Jaccard 0.947), but the bytes differ, so the archive is an earlier or reformatted copy."
+}
