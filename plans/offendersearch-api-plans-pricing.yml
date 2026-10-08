@@ -97,3 +97,27 @@ add_ons:
 overrides: >-
   All rates are metered defaults; an admin can override any rate (base, volume, daily
   surcharge, per-PDF) per customer, and enterprise customers can negotiate custom pricing.
+x-canonical:
+  generated: '2026-10-08'
+  vocabulary: all/0-working/economics/plans-canonical.yml
+  models:
+  - metered
+  units:
+  - request
+  plans:
+  - name: Per call
+    access: other
+    model: metered
+    model_how: stated
+    units:
+    - request
+    periods:
+    - other
+  - name: Volume tier
+    access: other
+    model: metered
+    model_how: stated
+    units:
+    - request
+    periods:
+    - other
