@@ -28,22 +28,7 @@ paths:
       tags:
       - Usage
 components:
-  responses:
-    Unauthorized:
-      description: Missing or invalid credential.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   schemas:
-    Error:
-      type: object
-      description: Standard FastAPI error body.
-      properties:
-        detail:
-          type: string
-          description: Human-readable error message.
-          example: Missing or invalid API key. Send it in the X-API-Key header.
     Usage:
       type: object
       properties:
@@ -91,6 +76,21 @@ components:
                 type: integer
               cost:
                 type: number
+    Error:
+      type: object
+      description: Standard FastAPI error body.
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message.
+          example: Missing or invalid API key. Send it in the X-API-Key header.
+  responses:
+    Unauthorized:
+      description: Missing or invalid credential.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

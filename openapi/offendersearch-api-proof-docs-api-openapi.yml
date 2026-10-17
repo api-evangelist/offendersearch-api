@@ -43,14 +43,14 @@ paths:
       - Proof Docs
 components:
   responses:
-    Unauthorized:
-      description: Missing or invalid credential.
+    NotFound:
+      description: Not found.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Not found.
+    Unauthorized:
+      description: Missing or invalid credential.
       content:
         application/json:
           schema:

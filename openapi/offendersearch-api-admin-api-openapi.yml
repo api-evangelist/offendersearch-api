@@ -365,38 +365,28 @@ paths:
       x-operation-id-source: derived
 components:
   schemas:
-    AdminAccount:
+    WarmQuery:
       type: object
+      description: An internal warm query (kept hot). curated or top-derived.
       properties:
-        id:
-          type: string
-        email:
-          type: string
-          format: email
-        orgName:
-          type: string
-        billingEnabled:
+        query:
+          $ref: '#/components/schemas/Query'
+        jurisdictions:
+          type: array
+          items:
+            type: string
+          nullable: true
+        locationScoped:
           type: boolean
-        createdAt:
+          default: false
+        source:
           type: string
-          format: date-time
-        activeKeys:
+          enum:
+          - curated
+          - derived
+        frequency:
           type: integer
-        searchCount:
-          type: integer
-    IngestReport:
-      type: object
-      description: 'Latest per-run ingest report. When no run has produced one yet, only `available:false` (+ note/reportDir) is returned.
-
-        '
-      properties:
-        available:
-          type: boolean
-        note:
-          type: string
-        reportDir:
-          type: string
-      additionalProperties: true
+          description: Observed customer-search count (derived queries only).
     Query:
       type: object
       additionalProperties: false
@@ -558,43 +548,25 @@ components:
           description: 'What to do with a record that matches on NAME but whose published age contradicts the searched `dob`. `drop` (default) omits it. `flag` RETURNS it, labelled `matchState: "age_mismatch"`, and lets you judge — "silently omitted" and "checked, and the age contradicts your date" are different facts. A flagged record is always `unverified` and can never be reported as DOB-confirmed.
 
             '
-    ScraperRun:
+    AdminAccount:
       type: object
-      description: One scraper call within a search — the atomic diagnostic record.
       properties:
-        ts:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        orgName:
+          type: string
+        billingEnabled:
+          type: boolean
+        createdAt:
           type: string
           format: date-time
-        scraper:
-          type: string
-        status:
-          type: string
-          enum:
-          - ok
-          - error
-          - restricted
-          - no_coverage
-        duration_ms:
+        activeKeys:
           type: integer
-        records:
+        searchCount:
           type: integer
-        from_cache:
-          type: boolean
-        truncated:
-          type: boolean
-          description: Hit a pagination/detail cap.
-        pages:
-          type: integer
-          nullable: true
-        note:
-          type: string
-          nullable: true
-        error:
-          type: string
-          nullable: true
-        query_hash:
-          type: string
-          description: Ties run to a search, no PII.
     WarmRunResult:
       type: object
       properties:
@@ -613,6 +585,45 @@ components:
           format: date-time
         durationMs:
           type: integer
+    IngestReport:
+      type: object
+      description: 'Latest per-run ingest report. When no run has produced one yet, only `available:false` (+ note/reportDir) is returned.
+
+        '
+      properties:
+        available:
+          type: boolean
+        note:
+          type: string
+        reportDir:
+          type: string
+      additionalProperties: true
+    CacheStats:
+      type: object
+      properties:
+        hitRate:
+          type: number
+          description: Fraction of sync calls served from cache.
+        hotSetSize:
+          type: integer
+        lastWarmRunAt:
+          type: string
+          format: date-time
+          nullable: true
+        staleEntries:
+          type: integer
+        perRegistry:
+          type: array
+          items:
+            type: object
+            properties:
+              registry:
+                type: string
+              warmSuccess:
+                type: boolean
+              lastWarmedAt:
+                type: string
+                format: date-time
     Error:
       type: object
       description: Standard FastAPI error body.
@@ -621,42 +632,6 @@ components:
           type: string
           description: Human-readable error message.
           example: Missing or invalid API key. Send it in the X-API-Key header.
-    IngestStatus:
-      type: object
-      description: Per-registry nightly-ingest freshness view (GET /admin/ingest/status).
-      properties:
-        generatedAt:
-          type: string
-          format: date-time
-        cachedJurisdictions:
-          type: array
-          items:
-            type: string
-        totals:
-          type: object
-          properties:
-            present:
-              type: integer
-            dropped:
-              type: integer
-        lastRunSummary:
-          type: object
-          properties:
-            okCount:
-              type: integer
-            errorCount:
-              type: integer
-            totalRecords:
-              type: integer
-            dbMb:
-              type: number
-            oldestFreshnessHours:
-              type: number
-              nullable: true
-        registries:
-          type: array
-          items:
-            $ref: '#/components/schemas/IngestRegistryRow'
     IngestRegistryRow:
       type: object
       properties:
@@ -708,54 +683,6 @@ components:
         freshnessAgeHours:
           type: number
           nullable: true
-    WarmQuery:
-      type: object
-      description: An internal warm query (kept hot). curated or top-derived.
-      properties:
-        query:
-          $ref: '#/components/schemas/Query'
-        jurisdictions:
-          type: array
-          items:
-            type: string
-          nullable: true
-        locationScoped:
-          type: boolean
-          default: false
-        source:
-          type: string
-          enum:
-          - curated
-          - derived
-        frequency:
-          type: integer
-          description: Observed customer-search count (derived queries only).
-    CacheStats:
-      type: object
-      properties:
-        hitRate:
-          type: number
-          description: Fraction of sync calls served from cache.
-        hotSetSize:
-          type: integer
-        lastWarmRunAt:
-          type: string
-          format: date-time
-          nullable: true
-        staleEntries:
-          type: integer
-        perRegistry:
-          type: array
-          items:
-            type: object
-            properties:
-              registry:
-                type: string
-              warmSuccess:
-                type: boolean
-              lastWarmedAt:
-                type: string
-                format: date-time
     ScraperHealth:
       type: object
       properties:
@@ -794,6 +721,79 @@ components:
               last_error:
                 type: string
                 nullable: true
+    ScraperRun:
+      type: object
+      description: One scraper call within a search — the atomic diagnostic record.
+      properties:
+        ts:
+          type: string
+          format: date-time
+        scraper:
+          type: string
+        status:
+          type: string
+          enum:
+          - ok
+          - error
+          - restricted
+          - no_coverage
+        duration_ms:
+          type: integer
+        records:
+          type: integer
+        from_cache:
+          type: boolean
+        truncated:
+          type: boolean
+          description: Hit a pagination/detail cap.
+        pages:
+          type: integer
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        error:
+          type: string
+          nullable: true
+        query_hash:
+          type: string
+          description: Ties run to a search, no PII.
+    IngestStatus:
+      type: object
+      description: Per-registry nightly-ingest freshness view (GET /admin/ingest/status).
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        cachedJurisdictions:
+          type: array
+          items:
+            type: string
+        totals:
+          type: object
+          properties:
+            present:
+              type: integer
+            dropped:
+              type: integer
+        lastRunSummary:
+          type: object
+          properties:
+            okCount:
+              type: integer
+            errorCount:
+              type: integer
+            totalRecords:
+              type: integer
+            dbMb:
+              type: number
+            oldestFreshnessHours:
+              type: number
+              nullable: true
+        registries:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngestRegistryRow'
   responses:
     Unauthorized:
       description: Missing or invalid credential.
